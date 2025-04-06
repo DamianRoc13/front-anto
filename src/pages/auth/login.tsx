@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -16,6 +17,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
@@ -27,7 +29,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border ">
+      <Card className="w-full max-w-md border">
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold text-white">ANTO</CardTitle>
         </CardHeader>
@@ -39,7 +41,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="">Email</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -48,7 +50,7 @@ export default function LoginPage() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -57,16 +59,25 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="">Contraseña</FormLabel>
+                    <FormLabel>Contraseña</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••"
-                        className="text-white"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••"
+                          className="text-white pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300"
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </FormControl>
-                    <FormMessage className="" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />

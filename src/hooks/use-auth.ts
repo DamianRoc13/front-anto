@@ -7,7 +7,7 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Función de login
+  
   const login = async (data: { email: string; password: string }) => {
     setIsLoading(true);
     try {
@@ -20,7 +20,7 @@ export const useAuth = () => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Error al iniciar sesión");
 
-      // Almacenar datos de autenticación
+      
       localStorage.setItem("user", JSON.stringify({
         id: result.user.id,
         name: result.user.name,
@@ -39,7 +39,7 @@ export const useAuth = () => {
     }
   };
 
-  // Función de logout
+  
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -47,24 +47,24 @@ export const useAuth = () => {
     navigate("/");
   };
 
-  // Verificar autenticación
+  
   const isAuthenticated = () => {
     return !!localStorage.getItem("token");
   };
 
-  // Obtener usuario actual
+  
   const getUser = () => {
     const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
   };
 
-  // Verificar roles
+  
   const hasRole = (role: string) => {
     const user = getUser();
     return user?.role === role;
   };
 
-  // Verificar permisos
+  
   const hasPermission = (permission: string) => {
     const user = getUser();
     return user?.permissions?.includes(permission) || user?.permissions?.includes('all');

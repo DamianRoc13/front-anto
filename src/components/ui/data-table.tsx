@@ -11,7 +11,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-  } from "./table"; // Asegúrate de tener este componente
+  } from "./table"; 
   
   interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
