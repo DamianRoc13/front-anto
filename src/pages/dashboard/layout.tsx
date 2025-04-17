@@ -10,7 +10,7 @@ import {
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { Users, LogOut } from "lucide-react";
+import { Users, LogOut, FileText, Search } from "lucide-react";
 import { ThemeProvider } from "next-themes";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
@@ -37,9 +37,9 @@ export default function DashboardLayout({
       storageKey="anto-theme"
     >
       <SidebarProvider>
-        <div className="flex h-screen">
+        <div className="flex h-screen w-full"> {/* Added w-full */}
           <Sidebar 
-            className="text-white border-r"
+            className="text-white border-r flex-shrink-0" /* Added flex-shrink-0 */
             collapsible="icon"
           >
             <SidebarHeader className="p-4 border-b">
@@ -57,40 +57,60 @@ export default function DashboardLayout({
                     <span>Usuarios</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/comprobantes-sri")}
+                    data-active={location.pathname.startsWith("/dashboard/comprobantes-sri")}
+                  >
+                    <FileText className="size-4" />
+                    <span>Comprobantes SRI</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/consultas-ant")}
+                    data-active={location.pathname.startsWith("/dashboard/consultas-ant")}
+                  >
+                    <Search className="size-4" />
+                    <span>Consultas ANT</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarContent>
 
-          <SidebarFooter className="p-4 border-t">
-           <div className="flex items-center gap-3">
-            <div className="size-8 rounded-full bg-gray-700 flex items-center justify-center">
-             <span className="text-sm font-medium">
-                {user?.name?.charAt(0).toUpperCase()}
-             </span>
-            </div>
-           <div className="flex-1 min-w-0">
-           <p className="text-sm font-medium truncate">{user?.name}</p>
-           <p className="text-xs truncate">{user?.email}</p>
-            </div>
-            <TooltipProvider>
-             <Tooltip>
-              <TooltipTrigger asChild>
-               <button 
-            onClick={logout}
-            className="text-gray-400 hover:text-white"
-          >
-            <LogOut className="size-4" />
-          </button>
-             </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Cerrar sesión</p>
-               </TooltipContent>
-              </Tooltip>
-             </TooltipProvider>
-            </div>
-           </SidebarFooter>
+            <SidebarFooter className="p-4 border-t">
+              <div className="flex items-center gap-3">
+                <div className="size-8 rounded-full bg-gray-700 flex items-center justify-center">
+                  <span className="text-sm font-medium">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-xs truncate">{user?.email}</p>
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button 
+                        onClick={logout}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <LogOut className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Cerrar sesión</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </SidebarFooter>
           </Sidebar>
 
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto w-full"> {/* Removed p-6 and added w-full */}
             <Outlet />
           </main>
         </div>

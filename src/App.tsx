@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "@/pages/auth/login";
 import DashboardLayout from "@/pages/dashboard/layout";
 import UsersPage from "@/pages/dashboard/users/page";
+import ComprobantesPage from "@/pages/dashboard/comprobantes-sri/page";
+import ConsultasAntPage from "@/pages/dashboard/consultas-ant/page"; 
 import { Toaster } from "@/components/ui/sonner";
 
 export default function App() {
@@ -12,9 +14,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
+            {/* Rutas anidadas */}
             <Route path="users" element={<UsersPage />} />
-            <Route path="users/new" element={<div>Nuevo Usuario</div>} />
-            <Route path="users/:id" element={<div>Editar Usuario</div>} />
+            <Route path="comprobantes-sri" element={<ComprobantesPage />} />
+            <Route path="consultas-ant" element={<ConsultasAntPage />} /> {/* Nueva ruta agregada */}
           </Route>
         </Routes>
       </Router>
