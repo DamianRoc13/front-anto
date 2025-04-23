@@ -37,9 +37,9 @@ export default function DashboardLayout({
       storageKey="anto-theme"
     >
       <SidebarProvider>
-        <div className="flex h-screen w-full"> {/* Added w-full */}
+        <div className="flex h-screen w-full">
           <Sidebar 
-            className="text-white border-r flex-shrink-0" /* Added flex-shrink-0 */
+            className="text-white border-r flex-shrink-0"
             collapsible="icon"
           >
             <SidebarHeader className="p-4 border-b">
@@ -78,18 +78,16 @@ export default function DashboardLayout({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-             <SidebarMenuButton
-               onClick={() => navigate("/dashboard/kpi")}
-              data-active={location.pathname.startsWith("/dashboard/kpi")}
-             >
-             <Search className="size-4" />
-             <span>KPI</span>
-             </SidebarMenuButton>
-            </SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/kpi")}
+                    data-active={location.pathname.startsWith("/dashboard/kpi")}
+                  >
+                    <Search className="size-4" />
+                    <span>KPI</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarContent>
-
-            
 
             <SidebarFooter className="p-4 border-t">
               <div className="flex items-center gap-3">
@@ -121,8 +119,10 @@ export default function DashboardLayout({
             </SidebarFooter>
           </Sidebar>
 
-          <main className="flex-1 overflow-auto w-full"> {/* Removed p-6 and added w-full */}
-            <Outlet />
+          <main className="flex-1 overflow-auto p-6 bg-muted/10"> {/* Cambios aquí */}
+            <div className="h-full rounded-lg bg-background p-6 shadow-sm"> {/* Contenedor interno */}
+              <Outlet />
+            </div>
           </main>
         </div>
       </SidebarProvider>
