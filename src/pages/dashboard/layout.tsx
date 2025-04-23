@@ -77,8 +77,19 @@ export default function DashboardLayout({
                     <span>Consultas ANT</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+             <SidebarMenuButton
+               onClick={() => navigate("/dashboard/kpi")}
+              data-active={location.pathname.startsWith("/dashboard/kpi")}
+             >
+             <Search className="size-4" />
+             <span>KPI</span>
+             </SidebarMenuButton>
+            </SidebarMenuItem>
               </SidebarMenu>
             </SidebarContent>
+
+            
 
             <SidebarFooter className="p-4 border-t">
               <div className="flex items-center gap-3">
