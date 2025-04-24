@@ -2,30 +2,23 @@
 
 import { Bell, BellDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { CommitApprovalModal } from "./commit-approval-modal";
 import { useAuth } from "@/hooks/use-auth";
-
-interface Commit {
-  id: string;
-  oldData: string;
-  newData: string;
-  message: string;
-  status: string;
-  createdAt: string;
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function PendingApprovals() {
-  const [pendingCommits, setPendingCommits] = useState<Commit[]>([]);
-  const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
+  const [pendingCommits, setPendingCommits] = useState<any[]>([]);
+  const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
+  const [isListOpen, setIsListOpen] = useState(false);
+  const [isApprovalOpen, setIsApprovalOpen] = useState(false);
   const auth = useAuth();
 
   useEffect(() => {
@@ -42,6 +35,7 @@ export function PendingApprovals() {
         setPendingCommits(response.data);
       } catch (error) {
         console.error("Error fetching pending commits:", error);
+        toast.error("Error al cargar aprobaciones pendientes");
       }
     };
     
@@ -51,9 +45,7 @@ export function PendingApprovals() {
   const handleApprove = async (commitId: string) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      if (!token) return;
 
       await axios.post(`http://localhost:3000/headcount/commits/${commitId}/approve`, {
         approvedBy: auth.user?.name || 'Admin'
@@ -64,9 +56,29 @@ export function PendingApprovals() {
       });
       
       setPendingCommits(pendingCommits.filter((c) => c.id !== commitId));
-      toast.success("Los cambios han sido aplicados a la tabla");
+      toast.success("Cambios aprobados exitosamente");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo aprobar el commit");
+      toast.error("Error al aprobar los cambios");
+    }
+  };
+
+  const handleReject = async (commitId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      await axios.post(`http://localhost:3000/headcount/commits/${commitId}/reject`, {
+        rejectedBy: auth.user?.name || 'Admin'
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setPendingCommits(pendingCommits.filter((c) => c.id !== commitId));
+      toast.success("Cambios rechazados exitosamente");
+    } catch (error) {
+      toast.error("Error al rechazar los cambios");
     }
   };
 
@@ -74,43 +86,82 @@ export function PendingApprovals() {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative mb-4">
-            {pendingCommits.length > 0 ? (
-              <>
-                <BellDot className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                  {pendingCommits.length}
-                </span>
-              </>
-            ) : (
-              <Bell className="h-5 w-5" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {pendingCommits.map((commit) => (
-            <DropdownMenuItem
-              key={commit.id}
-              onClick={() => setSelectedCommit(commit)}
-            >
-              <div className="flex flex-col">
-                <span className="font-medium">{commit.message}</span>
-                <span className="text-xs text-gray-500">
-                  {new Date(commit.createdAt).toLocaleString()}
-                </span>
-              </div>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Botón de campanita */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="relative"
+        onClick={() => setIsListOpen(true)}
+      >
+        {pendingCommits.length > 0 ? (
+          <>
+            <BellDot className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+              {pendingCommits.length}
+            </span>
+          </>
+        ) : (
+          <Bell className="h-5 w-5" />
+        )}
+      </Button>
 
+      {/* Modal de lista de pendientes */}
+      <Dialog open={isListOpen} onOpenChange={setIsListOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Aprobaciones Pendientes ({pendingCommits.length})</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-2">
+            {pendingCommits.map((commit) => (
+              <div 
+                key={commit.id} 
+                className="p-4 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                onClick={() => {
+                  setSelectedCommit(commit);
+                  setIsApprovalOpen(true);
+                }}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-medium">{commit.message}</h4>
+                    <p className="text-sm text-gray-500">
+                      {new Date(commit.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Ver cambios
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de aprobación/rechazo */}
       {selectedCommit && (
         <CommitApprovalModal
           commit={selectedCommit}
-          onApprove={() => handleApprove(selectedCommit.id)}
-          onOpenChange={(open) => !open && setSelectedCommit(null)}
+          onApprove={() => {
+            handleApprove(selectedCommit.id);
+            setIsListOpen(false);
+            setIsApprovalOpen(false);
+          }}
+          onReject={() => {
+            handleReject(selectedCommit.id);
+            setIsListOpen(false);
+            setIsApprovalOpen(false);
+          }}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsApprovalOpen(false);
+              setSelectedCommit(null);
+            } else {
+              setIsApprovalOpen(true);
+            }
+          }}
+          open={isApprovalOpen}
         />
       )}
     </>

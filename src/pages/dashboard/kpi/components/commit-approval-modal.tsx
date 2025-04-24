@@ -12,16 +12,20 @@ import { DiffTable } from "./diff-table";
 interface CommitApprovalModalProps {
   commit: any;
   onApprove: () => void;
+  onReject: () => void;
   onOpenChange: (open: boolean) => void;
+  open: boolean;
 }
 
 export function CommitApprovalModal({
   commit,
   onApprove,
+  onReject,
   onOpenChange,
+  open,
 }: CommitApprovalModalProps) {
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Revisar cambios para aprobación</DialogTitle>
@@ -38,10 +42,26 @@ export function CommitApprovalModal({
         />
         
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cerrar
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              onReject();
+              onOpenChange(false);
+            }}
+          >
+            Rechazar
           </Button>
-          <Button onClick={onApprove}>Aprobar cambios</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={() => {
+              onApprove();
+              onOpenChange(false);
+            }}
+          >
+            Aprobar cambios
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
