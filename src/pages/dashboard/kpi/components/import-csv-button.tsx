@@ -44,6 +44,18 @@ export function ImportCSVButton() {
   } | null>(null);
   const { data: currentData } = useHeadcount();
 
+  const normalizeCedula = (cedula: string | undefined): string => {
+    if (!cedula) return '';
+    
+    const strCedula = cedula.toString().trim();
+    
+    if (/^\d{9}$/.test(strCedula)) {
+      return `0${strCedula}`; 
+    }
+    
+    return strCedula; 
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -53,9 +65,9 @@ export function ImportCSVButton() {
         header: true,
         complete: (results: ParseResult<CSVData>) => {
           const processedData = results.data
-            .filter(item => item.CEDULA) // Filtrar filas sin cédula
+            .filter(item => item.CEDULA) 
             .map(item => {
-              // Convertir campos numéricos
+              
               const sueldo = item.SUELDO ? 
                 typeof item.SUELDO === 'string' ? 
                 parseFloat(item.SUELDO.replace(',', '.')) : 
@@ -66,7 +78,8 @@ export function ImportCSVButton() {
                 parseFloat(item.KPI.replace(',', '.')) : 
                 Number(item.KPI) : 0;
 
-              // Convertir cédula a número para el ID
+              const cedulaNormalizada = normalizeCedula(item.CEDULA);
+
               const id = item.CEDULA ? parseInt(item.CEDULA, 10) : Math.floor(Math.random() * 1000000);
 
               return {
@@ -76,7 +89,7 @@ export function ImportCSVButton() {
                 mes2: item.MES_2 || '',
                 fechaEntradaSalida: item.FECHA_ENTRADA_SALIDA || '',
                 anio: item.ANIO || '',
-                cedula: item.CEDULA || '',
+                cedula: cedulaNormalizada,
                 nombre: item.NOMBRE || '',
                 sueldo: sueldo,
                 kpi: kpi,
@@ -94,7 +107,7 @@ export function ImportCSVButton() {
                 fechaTope: item.FECHA_TOPE || '',
                 autorizacion1: item.AUTORIZACION_1 || '',
                 autorizacion2: item.AUTORIZACION_2 || '',
-              } as Headcount; // Forzamos el tipo a Headcount
+              } as Headcount; 
             });
 
           setDiffData({
@@ -156,7 +169,13 @@ export function ImportCSVButton() {
   return (
     <>
       <Button
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => {
+          
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          fileInputRef.current?.click();
+        }}
         variant="outline"
       >
         <Upload className="mr-2 h-4 w-4" />
@@ -169,13 +188,21 @@ export function ImportCSVButton() {
         accept=".csv"
         className="hidden"
       />
-
+  
       {diffData && (
         <DiffViewerModal
           oldData={diffData.oldData}
           newData={diffData.newData}
           onCommit={handleCommit}
-          onOpenChange={(open) => !open && setDiffData(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDiffData(null);
+              
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }
+          }}
         />
       )}
     </>

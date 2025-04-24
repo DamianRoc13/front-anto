@@ -81,7 +81,7 @@ export function PendingApprovals({ onActionCompleted }: PendingApprovalsProps) {
       });
       
       setPendingCommits(pendingCommits.filter((c) => c.id !== commitId));
-      onActionCompleted?.(); // Llamada al callback para refrescar la tabla
+      onActionCompleted?.(); 
       toast.success("Cambios rechazados");
     } catch (error) {
       toast.error("Error al rechazar los cambios");

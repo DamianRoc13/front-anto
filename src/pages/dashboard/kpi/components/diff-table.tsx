@@ -39,20 +39,51 @@ export function DiffTable({ oldData, newData }: DiffTableProps) {
     }
   };
 
-  // Obtenemos todas las cédulas únicas
-  const allCedulas = [
-    ...new Set([
-      ...oldData.map((item) => item.cedula),
-      ...newData.map((item) => item.cedula),
-    ]),
-  ].filter(Boolean);
+  // Función para normalizar todos los valores antes de comparar
+  const normalizeValue = (value: any): any => {
+    if (value === null || value === undefined || value === '') return '';
+    if (typeof value === 'string') {
+      // Normalizar strings: trim, manejar casos especiales
+      const trimmed = value.trim();
+      
+      // Manejar fechas (puedes agregar más formatos si es necesario)
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
+        return trimmed; // Dejar fechas como están para comparación exacta
+      }
+      
+      // Manejar números con formato de string
+      if (!isNaN(Number(trimmed.replace(',', '.')))) {
+        return Number(trimmed.replace(',', '.'));
+      }
+      
+      return trimmed;
+    }
+    return value;
+  };
+
+  // Función mejorada para comparar cualquier tipo de valor
+  const areValuesEqual = (oldVal: any, newVal: any): boolean => {
+    const normalizedOld = normalizeValue(oldVal);
+    const normalizedNew = normalizeValue(newVal);
+
+    // Caso especial: ambos valores están "vacíos"
+    if (normalizedOld === '' && normalizedNew === '') return true;
+
+    // Comparación para números
+    if (typeof normalizedOld === 'number' && typeof normalizedNew === 'number') {
+      return Math.abs(normalizedOld - normalizedNew) < 0.001;
+    }
+
+    // Comparación estricta para otros casos
+    return normalizedOld === normalizedNew;
+  };
 
   // Función para detectar cambios por campo
   const getFieldStyle = (oldVal: any, newVal: any, key: string) => {
-    if (key === 'id') return colors.unchanged.text; // Ignorar ID
-    if (oldVal === newVal) return colors.unchanged.text;
-    if (!oldVal) return colors.added.text;
-    if (!newVal) return colors.removed.text;
+    if (key === 'id') return colors.unchanged.text;
+    if (areValuesEqual(oldVal, newVal)) return colors.unchanged.text;
+    if (!oldVal || oldVal === '') return colors.added.text;
+    if (!newVal || newVal === '') return colors.removed.text;
     return colors.modified.text;
   };
 
@@ -62,11 +93,22 @@ export function DiffTable({ oldData, newData }: DiffTableProps) {
     if (oldRow && !newRow) return 'removed';
     
     const hasChanges = Object.keys(newRow || oldRow).some(
-      key => key !== 'id' && oldRow[key] !== newRow[key]
+      key => key !== 'id' && !areValuesEqual(oldRow[key], newRow[key])
     );
     
     return hasChanges ? 'modified' : 'unchanged';
   };
+
+  // Obtenemos todas las cédulas únicas
+  const allCedulas = [
+    ...new Set([
+      ...oldData.map((item) => item.cedula),
+      ...newData.map((item) => item.cedula),
+    ]),
+  ].filter(Boolean);
+
+  // Campos que se muestran en la tabla (para debug)
+  const visibleFields = ['cedula', 'nombre', 'sueldo', 'kpi', 'cargoActividad'];
 
   return (
     <div className="border rounded-lg overflow-hidden mb-4 w-full max-w-[95vw]">
@@ -74,11 +116,14 @@ export function DiffTable({ oldData, newData }: DiffTableProps) {
         <TableHeader>
           <TableRow className={colors.unchanged.background}>
             <TableHead className="w-[120px]">Estado</TableHead>
-            <TableHead>Cédula</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Sueldo</TableHead>
-            <TableHead>KPI</TableHead>
-            <TableHead>Cargo</TableHead>
+            {visibleFields.map(field => (
+              <TableHead key={field}>
+                {field === 'cedula' ? 'Cédula' : 
+                 field === 'nombre' ? 'Nombre' :
+                 field === 'sueldo' ? 'Sueldo' :
+                 field === 'kpi' ? 'KPI' : 'Cargo'}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -88,6 +133,16 @@ export function DiffTable({ oldData, newData }: DiffTableProps) {
             const state = getRowState(oldRow, newRow);
             const style = colors[state];
             const displayRow = newRow || oldRow;
+
+            // DEBUG: Mostrar diferencias en consola
+            if (state === 'modified') {
+              console.log('Diferencias para cédula:', cedula);
+              Object.keys(newRow || oldRow).forEach(key => {
+                if (key !== 'id' && !areValuesEqual(oldRow?.[key], newRow?.[key])) {
+                  console.log(`Campo ${key}:`, 'Antiguo:', oldRow?.[key], 'Nuevo:', newRow?.[key]);
+                }
+              });
+            }
 
             // Texto descriptivo del estado
             const statusText = {
@@ -102,65 +157,26 @@ export function DiffTable({ oldData, newData }: DiffTableProps) {
                 <TableCell className={`font-medium ${style.text}`}>
                   {statusText}
                 </TableCell>
-                <TableCell className={getFieldStyle(oldRow?.cedula, newRow?.cedula, 'cedula')}>
-                  {displayRow?.cedula}
-                </TableCell>
-                <TableCell className={getFieldStyle(oldRow?.nombre, newRow?.nombre, 'nombre')}>
-                  {state === 'modified' && oldRow?.nombre !== newRow?.nombre ? (
-                    <>
-                      <span className={`line-through ${colors.removed.text} mr-2`}>
-                        {oldRow?.nombre}
-                      </span>
-                      <span className={colors.added.text}>
-                        {newRow?.nombre}
-                      </span>
-                    </>
-                  ) : (
-                    displayRow?.nombre
-                  )}
-                </TableCell>
-                <TableCell className={getFieldStyle(oldRow?.sueldo, newRow?.sueldo, 'sueldo')}>
-                  {state === 'modified' && oldRow?.sueldo !== newRow?.sueldo ? (
-                    <>
-                      <span className={`line-through ${colors.removed.text} mr-2`}>
-                        {oldRow?.sueldo}
-                      </span>
-                      <span className={colors.added.text}>
-                        {newRow?.sueldo}
-                      </span>
-                    </>
-                  ) : (
-                    displayRow?.sueldo
-                  )}
-                </TableCell>
-                <TableCell className={getFieldStyle(oldRow?.kpi, newRow?.kpi, 'kpi')}>
-                  {state === 'modified' && oldRow?.kpi !== newRow?.kpi ? (
-                    <>
-                      <span className={`line-through ${colors.removed.text} mr-2`}>
-                        {oldRow?.kpi}
-                      </span>
-                      <span className={colors.added.text}>
-                        {newRow?.kpi}
-                      </span>
-                    </>
-                  ) : (
-                    displayRow?.kpi
-                  )}
-                </TableCell>
-                <TableCell className={getFieldStyle(oldRow?.cargoActividad, newRow?.cargoActividad, 'cargoActividad')}>
-                  {state === 'modified' && oldRow?.cargoActividad !== newRow?.cargoActividad ? (
-                    <>
-                      <span className={`line-through ${colors.removed.text} mr-2`}>
-                        {oldRow?.cargoActividad}
-                      </span>
-                      <span className={colors.added.text}>
-                        {newRow?.cargoActividad}
-                      </span>
-                    </>
-                  ) : (
-                    displayRow?.cargoActividad
-                  )}
-                </TableCell>
+                
+                {visibleFields.map(field => (
+                  <TableCell 
+                    key={field} 
+                    className={getFieldStyle(oldRow?.[field], newRow?.[field], field)}
+                  >
+                    {state === 'modified' && !areValuesEqual(oldRow?.[field], newRow?.[field]) ? (
+                      <>
+                        <span className={`line-through ${colors.removed.text} mr-2`}>
+                          {oldRow?.[field] ?? '-'}
+                        </span>
+                        <span className={colors.added.text}>
+                          {newRow?.[field] ?? '-'}
+                        </span>
+                      </>
+                    ) : (
+                      displayRow?.[field] ?? '-'
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
             );
           })}

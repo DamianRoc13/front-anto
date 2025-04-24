@@ -10,7 +10,7 @@ import {
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { Users, LogOut, FileText, Search } from "lucide-react";
+import { Users, LogOut, FileText, Search, UserCog, UserCheck, Users2 } from "lucide-react";
 import { ThemeProvider } from "next-themes";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
@@ -82,8 +82,8 @@ export default function DashboardLayout({
                     onClick={() => navigate("/dashboard/kpi")}
                     data-active={location.pathname.startsWith("/dashboard/kpi")}
                   >
-                    <Search className="size-4" />
-                    <span>KPI</span>
+                    <UserCog className="size-4" />
+                    <span>HeadCount</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

@@ -1,4 +1,3 @@
-// src/pages/dashboard/kpi/components/diff-viewer-modal.tsx
 "use client";
 
 import {
@@ -41,7 +40,17 @@ export function DiffViewerModal({
   };
 
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog 
+      open={true} 
+      onOpenChange={(open) => {
+        if (!open) {
+          // Resetear el estado al cerrar
+          setCommitMessage("");
+          setIsSubmitting(false);
+        }
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Comparación de cambios</DialogTitle>
