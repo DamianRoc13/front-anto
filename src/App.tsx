@@ -5,7 +5,7 @@ import DashboardLayout from "@/pages/dashboard/layout";
 import UsersPage from "@/pages/dashboard/users/page";
 import ComprobantesPage from "@/pages/dashboard/comprobantes-sri/page";
 import ConsultasAntPage from "@/pages/dashboard/consultas-ant/page"; 
-import KPIPage from "@/pages/dashboard/kpi/page";
+import HEADCOUNTPage from "./pages/dashboard/headcount/page";
 import { Toaster } from "@/components/ui/sonner";
 
 export default function App() {
@@ -19,7 +19,7 @@ export default function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="comprobantes-sri" element={<ComprobantesPage />} />
             <Route path="consultas-ant" element={<ConsultasAntPage />} /> 
-            <Route path="kpi" element={<KPIPage />} /> 
+            <Route path="headcount" element={<HEADCOUNTPage />} /> 
           </Route>
         </Routes>
       </Router>

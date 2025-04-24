@@ -6,7 +6,7 @@ import { PendingApprovals } from "./components/pending-approvals";
 import { useAuth } from "@/hooks/use-auth";
 import { useHeadcount } from "@/hooks/use-headcount";
 
-export default function KPIPage() {
+export default function HEADCOUNTPage() {
   const { user } = useAuth();
   const { data, loading, error, refetch } = useHeadcount(); 
 

@@ -79,8 +79,8 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => navigate("/dashboard/kpi")}
-                    data-active={location.pathname.startsWith("/dashboard/kpi")}
+                    onClick={() => navigate("/dashboard/headcount")}
+                    data-active={location.pathname.startsWith("/dashboard/headcount")}
                   >
                     <UserCog className="size-4" />
                     <span>HeadCount</span>
