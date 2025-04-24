@@ -14,7 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function PendingApprovals() {
+interface PendingApprovalsProps {
+  onActionCompleted?: () => void;
+}
+
+export function PendingApprovals({ onActionCompleted }: PendingApprovalsProps) {
   const [pendingCommits, setPendingCommits] = useState<any[]>([]);
   const [selectedCommit, setSelectedCommit] = useState<any | null>(null);
   const [isListOpen, setIsListOpen] = useState(false);
@@ -56,7 +60,8 @@ export function PendingApprovals() {
       });
       
       setPendingCommits(pendingCommits.filter((c) => c.id !== commitId));
-      toast.success("Cambios aprobados exitosamente");
+      onActionCompleted?.(); 
+      toast.success("Cambios aprobados y tabla actualizada");
     } catch (error) {
       toast.error("Error al aprobar los cambios");
     }
@@ -76,7 +81,8 @@ export function PendingApprovals() {
       });
       
       setPendingCommits(pendingCommits.filter((c) => c.id !== commitId));
-      toast.success("Cambios rechazados exitosamente");
+      onActionCompleted?.(); // Llamada al callback para refrescar la tabla
+      toast.success("Cambios rechazados");
     } catch (error) {
       toast.error("Error al rechazar los cambios");
     }
