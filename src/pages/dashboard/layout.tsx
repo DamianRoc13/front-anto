@@ -10,7 +10,7 @@ import {
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { Users, LogOut, FileText, Search, UserCog, UserCheck, Users2 } from "lucide-react";
+import { Users, LogOut, FileText, Search, UserCog, UserCheck, Users2, BadgePercent } from "lucide-react";
 import { ThemeProvider } from "next-themes";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
@@ -86,7 +86,18 @@ export default function DashboardLayout({
                     <span>HeadCount</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/kpi")}
+                    data-active={location.pathname.startsWith("/dashboard/kpi")}
+                  >
+                    <BadgePercent className="size-4" />
+                    <span>KPI</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
+            
             </SidebarContent>
 
             <SidebarFooter className="p-4 border-t">
