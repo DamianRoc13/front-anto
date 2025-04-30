@@ -20,6 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const queryClient = new QueryClient();
 
 export default function DashboardLayout({
   children,
@@ -31,6 +33,7 @@ export default function DashboardLayout({
   const location = useLocation();
 
   return (
+    <QueryClientProvider client={queryClient}>
     <ThemeProvider 
       attribute="class"
       defaultTheme="dark"
@@ -138,5 +141,6 @@ export default function DashboardLayout({
         </div>
       </SidebarProvider>
     </ThemeProvider>
+    </QueryClientProvider>
   );
 }
