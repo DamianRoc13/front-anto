@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ChevronLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
-
 export default function KPIPage() {
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const queryClient = useQueryClient();
   const [selectedCargo, setSelectedCargo] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -20,6 +21,7 @@ export default function KPIPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [nuevaCalificacion, setNuevaCalificacion] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [viewAllEmployees, setViewAllEmployees] = useState(false);
 
   const { getKPIs, calificarKPI } = useKPI();
   const { 
@@ -36,28 +38,21 @@ export default function KPIPage() {
   const cargosUnicos = useMemo(() => {
     if (!allKPIs || allKPIs.length === 0) return [];
     
-    console.log('Procesando cargos...', allKPIs); 
-  
-    // Filtramos primero los que tienen KPI > 0
     const conKPI = allKPIs.filter(item => parseFloat(item.kpi) > 0);
-    
-   
     const cargos = new Set<string>();
     conKPI.forEach(item => {
       if (item.cargoActividad && item.cargoActividad.trim() !== '') {
         cargos.add(item.cargoActividad.trim());
       }
     });
-    
-    console.log('Cargos encontrados:', Array.from(cargos)); 
     return Array.from(cargos).sort();
   }, [allKPIs]);
 
-  // Filtrar empleados por cargo seleccionado
   const empleadosFiltrados = useMemo(() => {
+    if (viewAllEmployees) return allKPIs;
     if (!selectedCargo) return [];
     return allKPIs.filter(item => item.cargoActividad === selectedCargo);
-  }, [selectedCargo, allKPIs]);
+  }, [selectedCargo, allKPIs, viewAllEmployees]);
 
   if (errorAll) {
     return (
@@ -71,7 +66,24 @@ export default function KPIPage() {
 
   const handleCargoClick = (cargo: string) => {
     setSelectedCargo(cargo);
+    setViewAllEmployees(false);
     setShowPasswordDialog(true);
+  };
+
+  const handleAdminAccess = () => {
+    setSelectedCargo('TODOS LOS EMPLEADOS');
+    setShowAdminDialog(true);
+  };
+
+  const handleAdminSubmit = () => {
+    if (adminPassword === 'admin') {
+      setViewAllEmployees(true);
+      setShowTable(true);
+      setShowAdminDialog(false);
+      setAdminPassword('');
+    } else {
+      alert('Clave de administrador incorrecta');
+    }
   };
 
   const handlePasswordSubmit = () => {
@@ -121,15 +133,30 @@ export default function KPIPage() {
             <div className="flex justify-center">Cargando cargos...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {}
+              <Card className="cursor-pointer hover:bg-gray-50 group" onClick={handleAdminAccess}>
+                <CardHeader>
+                  <CardTitle className="text-lg group-hover:text-gray-500">
+                    TODOS LOS EMPLEADOS
+                  </CardTitle>
+                </CardHeader>
+               <CardContent>
+                <p className="text-sm text-gray-500 group-hover:text-gray-700">
+                  {allKPIs.length} empleados
+                </p>
+               </CardContent>
+              </Card>
+
+              {}
               {cargosUnicos.map((cargo, index) => {
                 const count = allKPIs.filter(item => item.cargoActividad === cargo).length;
                 return (
-                  <Card key={index} className="cursor-pointer hover:bg-gray-50" onClick={() => handleCargoClick(cargo)}>
+                  <Card key={index} className="cursor-pointer hover:bg-gray-50 group" onClick={() => handleCargoClick(cargo)}>
                     <CardHeader>
-                      <CardTitle className="text-lg">{cargo}</CardTitle>
+                      <CardTitle className="text-lg group-hover:text-gray-500">{cargo}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 group-hover:text-gray-700">
                         {count} empleado{count !== 1 ? 's' : ''}
                       </p>
                     </CardContent>
@@ -139,6 +166,7 @@ export default function KPIPage() {
             </div>
           )}
 
+          {}
           <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
             <DialogContent>
               <DialogHeader>
@@ -166,14 +194,48 @@ export default function KPIPage() {
               </div>
             </DialogContent>
           </Dialog>
+
+          {}
+          <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Acceso de Administrador</DialogTitle>
+                <DialogDescription>
+                  Ingrese la clave de administrador para ver todos los empleados
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Input 
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Clave de administrador"
+                  className="mb-4"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowAdminDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleAdminSubmit}>
+                  Acceder
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       ) : (
         <>
-          <Button variant="ghost" className="mb-4" onClick={() => setShowTable(false)}>
+          <Button variant="ghost" className="mb-4" onClick={() => {
+            setShowTable(false);
+            setViewAllEmployees(false);
+          }}>
             <ChevronLeft className="mr-2 h-4 w-4" /> Volver a cargos
           </Button>
 
-          <h1 className="text-2xl font-bold mb-6">KPI - {selectedCargo}</h1>
+          <h1 className="text-2xl font-bold mb-6">
+            KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
+          </h1>
           
           <div className="border rounded-lg overflow-hidden">
             <Table>
@@ -220,9 +282,9 @@ export default function KPIPage() {
             </Table>
           </div>
 
-          {/* Diálogo de calificación (se mantiene igual) */}
+          {}
           <Dialog open={showCalificarDialog} onOpenChange={setShowCalificarDialog}>
-            {/* ... contenido del diálogo ... */}
+            {}
           </Dialog>
         </>
       )}
