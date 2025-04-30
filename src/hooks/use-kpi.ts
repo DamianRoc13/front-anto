@@ -1,14 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api'; 
 import axios from 'axios';
 
 interface KpiData {
+  id: number;
   cedula: string;
   nombre: string;
   cargoActividad: string;
-  calificacionKPI: number;
-  usuarioCalificador: string;
+  sueldo: string;
+  kpi: string;
+  grupoCentrosCostos: string;
+  calificacionKPI: string;
+  totalKPI: string;
+  observaciones: string;
   estado: 'pendiente' | 'aprobado' | 'rechazado';
+  fechaCalificacion: string;
+  usuarioCalificador: string;
 }
+
+
 
 export function useKPI() {
   const queryClient = useQueryClient();
@@ -17,24 +27,18 @@ export function useKPI() {
     queryKey: ['kpis'],
     queryFn: async () => {
       try {
-        const { data } = await axios.get('/api/kpi');
-        return Array.isArray(data) ? data : []; 
+        const { data } = await api.get('/kpi');
+        
+        console.log('Datos recibidos del backend:', data); 
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error fetching KPIs:', error);
-        return []; 
+        return [];
       }
     },
     staleTime: 1000 * 60 * 5
   });
 
-  const getKPIsByCargo = (cargo: string) => useQuery<KpiData[]>({
-    queryKey: ['kpis', cargo],
-    queryFn: async () => {
-      const { data } = await axios.get(`/api/kpi?cargo=${cargo}`);
-      return data;
-    },
-    enabled: !!cargo
-  });
 
   const calificarKPI = useMutation({
     mutationFn: async ({ 
@@ -46,9 +50,13 @@ export function useKPI() {
       calificacion: number;
       observaciones?: string;
     }) => {
-      const { data } = await axios.put(`/api/kpi/calificar/${cedula}`, { 
+      const { data } = await axios.put(`/kpi/calificar/${cedula}`, { 
         calificacionKPI: calificacion,
         observaciones
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
       });
       return data;
     },
@@ -57,5 +65,5 @@ export function useKPI() {
     }
   });
 
-  return { getKPIs, getKPIsByCargo, calificarKPI };
+  return { getKPIs, calificarKPI };
 }
