@@ -8,6 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ChevronLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Slider } from '@/components/ui/slider';
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
@@ -22,6 +31,7 @@ export default function KPIPage() {
   const [nuevaCalificacion, setNuevaCalificacion] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [viewAllEmployees, setViewAllEmployees] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const { getKPIs, calificarKPI } = useKPI();
   const { 
@@ -49,10 +59,67 @@ export default function KPIPage() {
   }, [allKPIs]);
 
   const empleadosFiltrados = useMemo(() => {
-    if (viewAllEmployees) return allKPIs;
-    if (!selectedCargo) return [];
-    return allKPIs.filter(item => item.cargoActividad === selectedCargo);
+    let filtered = viewAllEmployees ? allKPIs : (selectedCargo ? allKPIs.filter(item => item.cargoActividad === selectedCargo) : []);
+    return filtered;
   }, [selectedCargo, allKPIs, viewAllEmployees]);
+
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "cedula",
+      header: "Cédula",
+    },
+    {
+      accessorKey: "nombre",
+      header: "Nombre",
+    },
+    {
+      accessorKey: "cargoActividad",
+      header: "Cargo",
+    },
+    {
+      accessorKey: "calificacionKPI",
+      header: "Calificación",
+    },
+    {
+      accessorKey: "usuarioCalificador",
+      header: "Calificador",
+    },
+    {
+      accessorKey: "estado",
+      header: "Estado",
+      cell: ({ row }) => (
+        <span className={`px-2 py-1 rounded-full text-xs ${
+          row.original.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
+          row.original.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+          'bg-red-100 text-red-800'
+        }`}>
+          {row.original.estado}
+        </span>
+      ),
+    },
+    {
+      id: "acciones",
+      cell: ({ row }) => (
+        <Button 
+          size="sm" 
+          onClick={() => handleCalificarClick(row.original)}
+        >
+          Calificar
+        </Button>
+      ),
+    },
+  ];
+
+  const table = useReactTable({
+    data: empleadosFiltrados,
+    columns,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      columnFilters,
+    },
+  });
 
   if (errorAll) {
     return (
@@ -112,6 +179,11 @@ export default function KPIPage() {
       return;
     }
 
+    if (!observaciones.trim()) {
+      alert('Las observaciones son obligatorias');
+      return;
+    }
+
     calificarKPI.mutate({
       cedula: selectedEmployee.cedula,
       calificacion,
@@ -133,7 +205,6 @@ export default function KPIPage() {
             <div className="flex justify-center">Cargando cargos...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {}
               <Card className="cursor-pointer hover:bg-gray-50 group" onClick={handleAdminAccess}>
                 <CardHeader>
                   <CardTitle className="text-lg group-hover:text-gray-500">
@@ -147,7 +218,6 @@ export default function KPIPage() {
                </CardContent>
               </Card>
 
-              {}
               {cargosUnicos.map((cargo, index) => {
                 const count = allKPIs.filter(item => item.cargoActividad === cargo).length;
                 return (
@@ -166,7 +236,6 @@ export default function KPIPage() {
             </div>
           )}
 
-          {}
           <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
             <DialogContent>
               <DialogHeader>
@@ -195,7 +264,6 @@ export default function KPIPage() {
             </DialogContent>
           </Dialog>
 
-          {}
           <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
             <DialogContent>
               <DialogHeader>
@@ -238,53 +306,138 @@ export default function KPIPage() {
           </h1>
           
           <div className="border rounded-lg overflow-hidden">
+            <div className="p-4 \ border-b flex flex-col sm:flex-row gap-4">
+              <Input
+                placeholder="Filtrar por cédula"
+                value={(table.getColumn("cedula")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn("cedula")?.setFilterValue(event.target.value)
+                }
+                className="max-w-xs"
+              />
+              <Input
+                placeholder="Filtrar por nombre"
+                value={(table.getColumn("nombre")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn("nombre")?.setFilterValue(event.target.value)
+                }
+                className="max-w-xs"
+              />
+            </div>
+            
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Cédula</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Calificación</TableHead>
-                  <TableHead>Calificador</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {empleadosFiltrados.map((item) => (
-                  <TableRow key={item.cedula}>
-                    <TableCell>{item.cedula}</TableCell>
-                    <TableCell>{item.nombre}</TableCell>
-                    <TableCell>{item.cargoActividad}</TableCell>
-                    <TableCell>{item.calificacionKPI}</TableCell>
-                    <TableCell>{item.usuarioCalificador}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        item.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
-                        item.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {item.estado}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleCalificarClick(item)}
-                        disabled={item.estado === 'aprobado'}
-                      >
-                        Calificar
-                      </Button>
-                    </TableCell>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                      No se encontraron resultados
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
 
-          {}
           <Dialog open={showCalificarDialog} onOpenChange={setShowCalificarDialog}>
-            {}
+            <DialogContent className="sm:max-w-[600px]">
+              <div className="text-center">
+                <DialogTitle className="text-xl">Calificar KPI</DialogTitle>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 py-4">
+                <div>
+                  <p className="text-sm font-medium">Cédula</p>
+                  <p className="text-sm">{selectedEmployee?.cedula}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Nombre</p>
+                  <p className="text-sm">{selectedEmployee?.nombre}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Cargo</p>
+                  <p className="text-sm">{selectedEmployee?.cargoActividad}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Calificación Actual</p>
+                  <p className="text-sm">{selectedEmployee?.calificacionKPI}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nueva Calificación (0-300)</label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      min={0}
+                      max={300}
+                      value={[Number(nuevaCalificacion)]}
+                      onValueChange={(value) => setNuevaCalificacion(value[0].toString())}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      max="300"
+                      value={nuevaCalificacion}
+                      onChange={(e) => setNuevaCalificacion(e.target.value)}
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Observaciones <span className="text-red-500">*</span></label>
+                  <Input
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder="Ingrese observaciones (obligatorio)"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowCalificarDialog(false)}>
+                  Cancelar
+                </Button>
+                {calificarKPI.isPending ? (
+                  <Button disabled>
+                    Enviando...
+                  </Button>
+                ) : (
+                  <Button onClick={handleCalificarSubmit} disabled={!observaciones.trim()}>
+                    {selectedEmployee?.estado === 'pendiente' ? 'Enviar para aprobación' : 'Calificar'}
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
           </Dialog>
         </>
       )}
