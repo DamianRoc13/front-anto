@@ -18,7 +18,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
-import axios from 'axios';
+import { PendingKpiApprovals } from './components/pending-kpi-approvals';
 
 export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
@@ -305,9 +305,16 @@ export default function KPIPage() {
             <ChevronLeft className="mr-2 h-4 w-4" /> Volver a cargos
           </Button>
 
-          <h1 className="text-2xl font-bold mb-6">
-            KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+  <h1 className="text-2xl font-bold">
+    KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
+  </h1>
+  <PendingKpiApprovals 
+    onActionCompleted={() => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+    }} 
+  />
+</div>
           
           <div className="border rounded-lg overflow-hidden">
             <div className="p-4 \ border-b flex flex-col sm:flex-row gap-4">

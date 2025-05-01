@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api'; 
-import axios from 'axios';
 
 interface KpiData {
   id: number;
@@ -16,6 +15,23 @@ interface KpiData {
   estado: 'pendiente' | 'aprobado' | 'rechazado';
   fechaCalificacion: string;
   usuarioCalificador: string;
+}
+
+export interface KpiCommit {
+  id: string;
+  cedula: string;
+  nombreEmpleado: string;
+  cargoEmpleado: string;
+  calificacionKPI: string;
+  totalKPI: string;
+  observaciones: string;
+  status: 'pending_first' | 'pending_second' | 'approved' | 'rejected';
+  createdAt: string;
+  firstApprovalAt: string | null;
+  firstApprovalBy: string | null;
+  secondApprovalAt: string | null;
+  secondApprovalBy: string | null;
+  rejectionReason: string | null;
 }
 
 export function useKPI() {
@@ -56,5 +72,38 @@ export function useKPI() {
     }
   });
 
-  return { getKPIs, createCommitKPI };
+  
+
+  const approveKpiCommit = useMutation({
+    mutationFn: async (commitId: string) => {
+      const token = localStorage.getItem('token');
+      const { data } = await api.put(`/kpi/commits/${commitId}/first-approval`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['kpi-pending-commits'] });
+    }
+  });
+  const getPendingCommits = useQuery<KpiCommit[]>({
+    queryKey: ['kpi-pending-commits'],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get('/kpi/commits/pending');
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching pending commits:', error);
+        return [];
+      }
+    },
+    refetchInterval: 30000, 
+    staleTime: 1000 * 60 * 5 
+  });
+
+
+  return { getKPIs, createCommitKPI, approveKpiCommit, getPendingCommits };
 }
