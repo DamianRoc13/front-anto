@@ -17,6 +17,8 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { toast } from "sonner";
+import axios from 'axios';
 
 export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
@@ -33,7 +35,7 @@ export default function KPIPage() {
   const [viewAllEmployees, setViewAllEmployees] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const { getKPIs, calificarKPI } = useKPI();
+  const { getKPIs,createCommitKPI } = useKPI();
   const { 
     data: allKPIs = [], 
     isLoading: isLoadingAll, 
@@ -170,30 +172,32 @@ export default function KPIPage() {
     setShowCalificarDialog(true);
   };
 
-  const handleCalificarSubmit = () => {
+  const handleCalificarSubmit = async () => {
     if (!selectedEmployee || !nuevaCalificacion) return;
     
     const calificacion = Number(nuevaCalificacion);
     if (calificacion < 0 || calificacion > 300) {
-      alert('La calificación debe estar entre 0 y 300');
+      toast.error('La calificación debe estar entre 0 y 300');
       return;
     }
-
+  
     if (!observaciones.trim()) {
-      alert('Las observaciones son obligatorias');
+      toast.error('Las observaciones son obligatorias');
       return;
     }
-
-    calificarKPI.mutate({
-      cedula: selectedEmployee.cedula,
-      calificacion,
-      observaciones
-    }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['kpis'] });
-        setShowCalificarDialog(false);
-      }
-    });
+  
+    try {
+      await createCommitKPI.mutateAsync({
+        cedula: selectedEmployee.cedula,
+        calificacionKPI: calificacion,
+        observaciones
+      });
+  
+      toast.success('Calificación creada correctamente');
+      setShowCalificarDialog(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al guardar la calificación');
+    }
   };
 
   return (
@@ -424,19 +428,16 @@ export default function KPIPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowCalificarDialog(false)}>
-                  Cancelar
-                </Button>
-                {calificarKPI.isPending ? (
-                  <Button disabled>
-                    Enviando...
-                  </Button>
-                ) : (
-                  <Button onClick={handleCalificarSubmit} disabled={!observaciones.trim()}>
-                    {selectedEmployee?.estado === 'pendiente' ? 'Enviar para aprobación' : 'Calificar'}
-                  </Button>
-                )}
-              </div>
+  <Button variant="outline" onClick={() => setShowCalificarDialog(false)}>
+    Cancelar
+  </Button>
+  <Button 
+    onClick={handleCalificarSubmit} 
+    disabled={!observaciones.trim() || createCommitKPI.isPending}
+  >
+    {createCommitKPI.isPending ? 'Enviando...' : 'Calificar'}
+  </Button>
+</div>
             </DialogContent>
           </Dialog>
         </>

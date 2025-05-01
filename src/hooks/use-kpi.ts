@@ -18,8 +18,6 @@ interface KpiData {
   usuarioCalificador: string;
 }
 
-
-
 export function useKPI() {
   const queryClient = useQueryClient();
 
@@ -28,8 +26,6 @@ export function useKPI() {
     queryFn: async () => {
       try {
         const { data } = await api.get('/kpi');
-        
-        console.log('Datos recibidos del backend:', data); 
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error fetching KPIs:', error);
@@ -39,24 +35,19 @@ export function useKPI() {
     staleTime: 1000 * 60 * 5
   });
 
-
-  const calificarKPI = useMutation({
+  const createCommitKPI = useMutation({
     mutationFn: async ({ 
       cedula, 
-      calificacion,
+      calificacionKPI,
       observaciones 
     }: { 
       cedula: string; 
-      calificacion: number;
-      observaciones?: string;
+      calificacionKPI: number;
+      observaciones: string;
     }) => {
-      const { data } = await axios.put(`/kpi/calificar/${cedula}`, { 
-        calificacionKPI: calificacion,
+      const { data } = await api.post(`/kpi/commits/${cedula}`, { 
+        calificacionKPI,
         observaciones
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
       });
       return data;
     },
@@ -65,5 +56,5 @@ export function useKPI() {
     }
   });
 
-  return { getKPIs, calificarKPI };
+  return { getKPIs, createCommitKPI };
 }
