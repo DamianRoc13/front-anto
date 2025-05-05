@@ -72,8 +72,6 @@ export function useKPI() {
     }
   });
 
-  
-
   const approveKpiCommit = useMutation({
     mutationFn: async (commitId: string) => {
       const token = localStorage.getItem('token');
@@ -89,6 +87,38 @@ export function useKPI() {
       queryClient.invalidateQueries({ queryKey: ['kpi-pending-commits'] });
     }
   });
+
+  const secondApproveCommit = useMutation({
+    mutationFn: async ({ id, action, rejectionReason }: { id: string; action: "approve" | "reject"; rejectionReason?: string }) => {
+      const { data } = await api.put(`/kpi/commits/${id}/second-approval`, {
+        action,
+        rejectionReason,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['kpi-pending-commits'] });
+    },
+    onError: (error: any) => {
+      console.error("Error en secondApproveCommit:", error.response?.data || error);
+    }
+  });
+
+  const updateCommit = useMutation({
+    mutationFn: async ({ id, calificacionKPI, observaciones }: { id: string; calificacionKPI: number; observaciones: string }) => {
+      const { data } = await api.put(`/kpi/commits/${id}`, {
+        calificacionKPI,
+        observaciones,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['kpi-pending-commits'] });
+    }
+  });
+
   const getPendingCommits = useQuery<KpiCommit[]>({
     queryKey: ['kpi-pending-commits'],
     queryFn: async () => {
@@ -104,6 +134,5 @@ export function useKPI() {
     staleTime: 1000 * 60 * 5 
   });
 
-
-  return { getKPIs, createCommitKPI, approveKpiCommit, getPendingCommits };
+  return { getKPIs, createCommitKPI, approveKpiCommit, secondApproveCommit, updateCommit, getPendingCommits };
 }

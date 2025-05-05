@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription // Añadido
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Accordion,
@@ -17,8 +17,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { useKPI } from '@/hooks/use-kpi';
+import { useKPI } from "@/hooks/use-kpi";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface PendingKpiApprovalsProps {
@@ -27,11 +28,14 @@ interface PendingKpiApprovalsProps {
 
 export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsProps) {
   const queryClient = useQueryClient();
-  const { getPendingCommits } = useKPI();
-  const { approveKpiCommit } = useKPI();
+  const { getPendingCommits, approveKpiCommit, secondApproveCommit, updateCommit } = useKPI();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [modifyingCommit, setModifyingCommit] = useState<any>(null);
+  const [updatedCalificacion, setUpdatedCalificacion] = useState("");
+  const [updatedObservaciones, setUpdatedObservaciones] = useState("");
+  const [rejectionReason, setRejectionReason] = useState<string>("");
+  const [rejectingCommitId, setRejectingCommitId] = useState<string | null>(null);
   const auth = useAuth();
-  
 
   const { 
     data: pendingCommits = [], 
@@ -39,9 +43,8 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
     error 
   } = getPendingCommits;
 
-  // Debug: Verifica los datos recibidos
   useEffect(() => {
-    console.log('Datos de commits pendientes:', pendingCommits);
+    console.log("Datos de commits pendientes:", pendingCommits);
   }, [pendingCommits]);
 
   const handleFirstApproval = async (commitId: string) => {
@@ -53,6 +56,39 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
       console.error("Error en aprobación:", error);
     }
   };
+
+  const handleSecondApproval = async (commitId: string, action: "approve" | "reject", rejectionReason?: string) => {
+    try {
+      await secondApproveCommit.mutateAsync({ id: commitId, action, rejectionReason });
+      toast.success(action === "approve" ? "Aprobado con éxito" : "Rechazado con éxito");
+      setRejectingCommitId(null); // Resetear estado después del rechazo
+      setRejectionReason(""); // Limpiar el motivo del rechazo
+      if (onActionCompleted) onActionCompleted();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Error al procesar la acción";
+      toast.error(errorMessage);
+      console.error("Error en aprobación/rechazo:", error);
+    }
+  };
+
+  const handleModifyCommit = async () => {
+    if (!modifyingCommit) return;
+
+    try {
+      await updateCommit.mutateAsync({
+        id: modifyingCommit.id,
+        calificacionKPI: Number(updatedCalificacion),
+        observaciones: updatedObservaciones,
+      });
+      toast.success("Commit modificado con éxito");
+      setModifyingCommit(null);
+      if (onActionCompleted) onActionCompleted();
+    } catch (error) {
+      toast.error("Error al modificar el commit");
+      console.error("Error en modificación:", error);
+    }
+  };
+
   if (error) {
     return (
       <div className="text-red-500 text-sm p-2">
@@ -115,13 +151,6 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                     </div>
                     <div className="flex items-center gap-2">
                       <AccordionTrigger className="p-2" />
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleFirstApproval(commit.id)}
-                        disabled={commit.status !== "pending_first"}
-                      >
-                        Enviar para aprobación
-                      </Button>
                     </div>
                   </div>
                   <AccordionContent className="px-4 pb-4">
@@ -143,6 +172,50 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                         <p className="text-sm">{commit.observaciones}</p>
                       </div>
                     </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSecondApproval(commit.id, "approve")}
+                      >
+                        Aprobar
+                      </Button>
+                      {rejectingCommitId === commit.id ? (
+                        <div className="flex flex-col gap-2 w-full">
+                          <Input
+                            placeholder="Especifique por qué se rechazó el commit"
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                          />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleSecondApproval(commit.id, "reject", rejectionReason)}
+                            disabled={!rejectionReason.trim()}
+                          >
+                            Confirmar Cancelación
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setRejectingCommitId(commit.id)}
+                        >
+                          Rechazar
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setModifyingCommit(commit);
+                          setUpdatedCalificacion(commit.calificacionKPI.toString());
+                          setUpdatedObservaciones(commit.observaciones || "");
+                        }}
+                      >
+                        Modificar
+                      </Button>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -150,6 +223,42 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
           )}
         </DialogContent>
       </Dialog>
+
+      {modifyingCommit && (
+        <Dialog open={!!modifyingCommit} onOpenChange={() => setModifyingCommit(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modificar Commit</DialogTitle>
+              <DialogDescription>Actualice los datos del commit</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Nueva Calificación KPI</label>
+                <Input
+                  type="number"
+                  value={updatedCalificacion}
+                  onChange={(e) => setUpdatedCalificacion(e.target.value)}
+                  placeholder="Ingrese nueva calificación"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Observaciones</label>
+                <Input
+                  value={updatedObservaciones}
+                  onChange={(e) => setUpdatedObservaciones(e.target.value)}
+                  placeholder="Ingrese observaciones"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setModifyingCommit(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleModifyCommit}>Guardar Cambios</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
