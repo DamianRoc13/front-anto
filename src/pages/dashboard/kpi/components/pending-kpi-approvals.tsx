@@ -128,7 +128,7 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
           <DialogHeader>
             <DialogTitle>KPIs Pendientes de Aprobación ({pendingCommits.length})</DialogTitle>
             <DialogDescription>
-              Lista de calificaciones por cédula
+              Calificaciónes por nombre de empleado.
             </DialogDescription>
           </DialogHeader>
           
@@ -144,7 +144,7 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                 <AccordionItem key={commit.id} value={commit.id}>
                   <div className="flex items-center justify-between p-4">
                     <div>
-                      <p className="font-medium">{commit.cedula}</p>
+                      <p className="font-medium">{commit.nombreEmpleado}</p>
                       <p className="text-sm text-gray-500">
                         {new Date(commit.createdAt).toLocaleString()}
                       </p>
@@ -156,8 +156,8 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                   <AccordionContent className="px-4 pb-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm font-medium">Nombre</p>
-                        <p className="text-sm">{commit.nombreEmpleado}</p>
+                        <p className="text-sm font-medium">cédula</p>
+                        <p className="text-sm">{commit.cedula}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Cargo</p>
@@ -180,31 +180,13 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                       >
                         Aprobar
                       </Button>
-                      {rejectingCommitId === commit.id ? (
-                        <div className="flex flex-col gap-2 w-full">
-                          <Input
-                            placeholder="Especifique por qué se rechazó el commit"
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                          />
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleSecondApproval(commit.id, "reject", rejectionReason)}
-                            disabled={!rejectionReason.trim()}
-                          >
-                            Confirmar Cancelación
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setRejectingCommitId(commit.id)}
-                        >
-                          Rechazar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setRejectingCommitId(commit.id)}
+                      >
+                        Rechazar
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => {
@@ -216,6 +198,35 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
                         Modificar
                       </Button>
                     </div>
+                    {rejectingCommitId === commit.id && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium mb-2">
+                          Especifique por qué se rechazó el commit
+                        </label>
+                        <textarea
+                          className="w-full p-2 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+                          placeholder="Ingrese el motivo del rechazo"
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          rows={1}
+                          style={{ overflow: "hidden" }}
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = "auto";
+                            target.style.height = `${target.scrollHeight}px`;
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="mt-2"
+                          onClick={() => handleSecondApproval(commit.id, "reject", rejectionReason)}
+                          disabled={!rejectionReason.trim()}
+                        >
+                          Confirmar Cancelación
+                        </Button>
+                      </div>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
               ))}
