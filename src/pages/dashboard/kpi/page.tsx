@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ChevronLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Slider } from '@/components/ui/slider';
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -35,7 +34,7 @@ export default function KPIPage() {
   const [viewAllEmployees, setViewAllEmployees] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const { getKPIs,createCommitKPI } = useKPI();
+  const { getKPIs, createCommitKPI, approveKpiCommit } = useKPI();
   const { 
     data: allKPIs = [], 
     isLoading: isLoadingAll, 
@@ -176,8 +175,14 @@ export default function KPIPage() {
     if (!selectedEmployee || !nuevaCalificacion) return;
     
     const calificacion = Number(nuevaCalificacion);
-    if (calificacion < 0 || calificacion > 300) {
-      toast.error('La calificación debe estar entre 0 y 300');
+    
+    if (calificacion < 0) {
+      toast.error('No se permiten números negativos');
+      return;
+    }
+    
+    if (calificacion > 300) {
+      toast.error('Rango de calificación excedido');
       return;
     }
   
@@ -187,13 +192,18 @@ export default function KPIPage() {
     }
   
     try {
-      await createCommitKPI.mutateAsync({
+      const commit = await createCommitKPI.mutateAsync({
         cedula: selectedEmployee.cedula,
         calificacionKPI: calificacion,
-        observaciones
+        observaciones,
       });
   
       toast.success('Calificación creada correctamente');
+
+      // Realizar la primera aprobación del commit creado
+      await approveKpiCommit.mutateAsync(commit.id);
+      toast.success('Primera aprobación realizada con éxito');
+  
       setShowCalificarDialog(false);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al guardar la calificación');
@@ -402,26 +412,31 @@ export default function KPIPage() {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nueva Calificación (0-300)</label>
-                  <div className="flex items-center gap-4">
-                    <Slider
-                      min={0}
-                      max={300}
-                      value={[Number(nuevaCalificacion)]}
-                      onValueChange={(value) => setNuevaCalificacion(value[0].toString())}
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      max="300"
-                      value={nuevaCalificacion}
-                      onChange={(e) => setNuevaCalificacion(e.target.value)}
-                      className="w-20"
-                    />
-                  </div>
-                </div>
+              <div>
+  <label className="block text-sm font-medium mb-2">Nueva Calificación KPI</label>
+  <div className="flex items-center gap-4">
+    <Input
+      type="number"
+      min="0"
+      max="300"
+      value={nuevaCalificacion}
+      onChange={(e) => {
+        const value = parseInt(e.target.value);
+        if (value < 0) {
+          toast.error("No se permiten números negativos");
+          setNuevaCalificacion("0");
+        } else if (value > 300) {
+          toast.error("Rango de calificación excedido");
+          setNuevaCalificacion("300");
+        } else {
+          setNuevaCalificacion(e.target.value);
+        }
+      }}
+      className="w-full"
+      placeholder="Ingrese un número de calificación"
+    />
+  </div>
+</div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Observaciones <span className="text-red-500">*</span></label>
