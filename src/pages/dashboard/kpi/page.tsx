@@ -78,10 +78,6 @@ export default function KPIPage() {
       header: "Cargo",
     },
     {
-      accessorKey: "calificacionKPI",
-      header: "Calificación",
-    },
-    {
       accessorKey: "usuarioCalificador",
       header: "Calificador",
     },
