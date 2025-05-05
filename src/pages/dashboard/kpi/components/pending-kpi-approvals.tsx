@@ -92,7 +92,7 @@ export function PendingKpiApprovals({ onActionCompleted }: PendingKpiApprovalsPr
           <DialogHeader>
             <DialogTitle>KPIs Pendientes de Aprobación ({pendingCommits.length})</DialogTitle>
             <DialogDescription>
-              Lista de calificaciones pendientes de revisión
+              Lista de calificaciones por cédula
             </DialogDescription>
           </DialogHeader>
           
