@@ -1,12 +1,13 @@
 "use client";
 import { useState, useMemo, useEffect } from 'react';
 import { useKPI } from '@/hooks/use-kpi';
+import { useJefeArea } from '@/hooks/use-jefe-area'; // Nuevo hook
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Settings, Trash } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ColumnDef,
@@ -22,6 +23,15 @@ import { PendingKpiApprovals } from './components/pending-kpi-approvals';
 export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showJefeAreaSection, setShowJefeAreaSection] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newJefeArea, setNewJefeArea] = useState({ id: '', nombre: '', contraseña: '', departamento: '' });
+  const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null);
+  const { getJefesArea, createJefeArea, deleteJefeArea } = useJefeArea();
+  const { data: jefesAreaData, refetch } = getJefesArea();
+
+  const jefesArea = Array.isArray(jefesAreaData) ? jefesAreaData : []; // Asegura que siempre sea un array
+
   const queryClient = useQueryClient();
   const [selectedCargo, setSelectedCargo] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -135,18 +145,16 @@ export default function KPIPage() {
   };
 
   const handleAdminAccess = () => {
-    setSelectedCargo('TODOS LOS EMPLEADOS');
     setShowAdminDialog(true);
   };
 
   const handleAdminSubmit = () => {
     if (adminPassword === 'admin') {
-      setViewAllEmployees(true);
-      setShowTable(true);
+      setShowJefeAreaSection(true);
       setShowAdminDialog(false);
       setAdminPassword('');
     } else {
-      alert('Clave de administrador incorrecta');
+      toast.error('Clave de administrador incorrecta');
     }
   };
 
@@ -206,13 +214,135 @@ export default function KPIPage() {
     }
   };
 
+  const handleCreateJefeArea = async () => {
+    try {
+      await createJefeArea.mutateAsync(newJefeArea);
+      toast.success('Jefe de área creado correctamente');
+      setNewJefeArea({ id: '', nombre: '', contraseña: '', departamento: '' });
+      setShowCreateDialog(false);
+      refetch();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al crear jefe de área');
+    }
+  };
+
+  const handleDeleteJefeArea = async (id: string) => {
+    try {
+      await deleteJefeArea.mutateAsync(id);
+      toast.success('Jefe de área eliminado correctamente');
+      setSelectedJefeArea(null); // Cierra el diálogo automáticamente
+      refetch();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al eliminar jefe de área');
+    }
+  };
+
+  if (showJefeAreaSection) {
+    return (
+      <div className="container mx-auto py-8">
+        <Button variant="ghost" className="mb-4" onClick={() => setShowJefeAreaSection(false)}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Volver
+        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Administrador de Jefes de Área</h1>
+          <Button onClick={() => setShowCreateDialog(true)}>Crear Jefe de Área</Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Contraseña</TableHead>
+              <TableHead>Departamento</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {jefesArea.map((jefe: any) => (
+              <TableRow key={jefe.id}>
+                <TableCell>{jefe.id}</TableCell>
+                <TableCell>{jefe.nombre}</TableCell>
+                <TableCell>{jefe.contraseña}</TableCell>
+                <TableCell>{jefe.departamento || 'N/A'}</TableCell>
+                <TableCell>
+                  <Button variant="ghost" onClick={() => setSelectedJefeArea(jefe)}>
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Jefe de Área</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Cédula (10 dígitos)"
+                value={newJefeArea.id}
+                onChange={(e) => setNewJefeArea({ ...newJefeArea, id: e.target.value })}
+              />
+              <Input
+                placeholder="Nombre"
+                value={newJefeArea.nombre}
+                onChange={(e) => setNewJefeArea({ ...newJefeArea, nombre: e.target.value })}
+              />
+              <Input
+                placeholder="Contraseña"
+                value={newJefeArea.contraseña}
+                onChange={(e) => setNewJefeArea({ ...newJefeArea, contraseña: e.target.value })}
+              />
+              <Input
+                placeholder="Departamento (opcional)"
+                value={newJefeArea.departamento}
+                onChange={(e) => setNewJefeArea({ ...newJefeArea, departamento: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateJefeArea}>Crear</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!selectedJefeArea} onOpenChange={() => setSelectedJefeArea(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Está seguro de eliminar a {selectedJefeArea?.nombre}?</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setSelectedJefeArea(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => handleDeleteJefeArea(selectedJefeArea.id)}>Eliminar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={handleAdminAccess}
+        >
+          <Settings className="h-4 w-4" /> Administrador de Jefes de Área
+        </Button>
+      </div>
       {!showTable ? (
         <>
-          <h1 className="text-2xl font-bold mb-6">Seleccione un Cargo</h1>
+          <h1 className="text-2xl font-bold mb-6">Seleccione por Jefe de Área</h1>
           {isLoadingAll ? (
-            <div className="flex justify-center">Cargando cargos...</div>
+            <div className="flex justify-center">Cargando jefes de área...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="cursor-pointer hover:bg-gray-50 group" onClick={handleAdminAccess}>
@@ -462,6 +592,31 @@ export default function KPIPage() {
           </Dialog>
         </>
       )}
+      <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Acceso de Administrador</DialogTitle>
+            <DialogDescription>
+              Ingrese la clave de administrador para acceder al administrador de jefes de área
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Clave de administrador"
+              className="mb-4"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowAdminDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAdminSubmit}>Acceder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
