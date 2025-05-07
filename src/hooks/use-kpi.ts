@@ -15,6 +15,7 @@ interface KpiData {
   estado: 'pendiente' | 'aprobado' | 'rechazado';
   fechaCalificacion: string;
   usuarioCalificador: string;
+  jefeArea: string; // Nuevo campo agregado
 }
 
 export interface KpiCommit {
@@ -36,13 +37,23 @@ export interface KpiCommit {
 
 export function useKPI() {
   const queryClient = useQueryClient();
+  const token = localStorage.getItem('token');
 
   const getKPIs = useQuery<KpiData[]>({
     queryKey: ['kpis'],
     queryFn: async () => {
       try {
-        const { data } = await api.get('/kpi');
-        return Array.isArray(data) ? data : [];
+        const { data } = await api.get('/kpi', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        return Array.isArray(data)
+          ? data.map((kpi: KpiData) => ({
+              ...kpi,
+              jefeArea: kpi.jefeArea || 'Sin jefe asignado', // Maneja el nuevo campo jefeArea
+            }))
+          : [];
       } catch (error) {
         console.error('Error fetching KPIs:', error);
         return [];

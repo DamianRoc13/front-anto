@@ -101,6 +101,11 @@ export default function KPIPage() {
       header: "Cargo",
     },
     {
+      accessorKey: "jefeArea", 
+      header: "Jefe de Área",
+      cell: ({ row }) => row.original.jefeArea?.nombre || 'Sin jefe asignado', // Muestra el nombre del jefe o un valor por defecto
+    },
+    {
       accessorKey: "usuarioCalificador",
       header: "Calificador",
     },
