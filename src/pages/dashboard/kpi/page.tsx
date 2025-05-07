@@ -39,6 +39,8 @@ export default function KPIPage() {
   const { data: historialesData, refetch: refetchHistoriales } = getHistoriales();
   const [historialPassword, setHistorialPassword] = useState('');
   const [showHistorialPasswordDialog, setShowHistorialPasswordDialog] = useState(false);
+  const [todosPassword, setTodosPassword] = useState('');
+  const [showTodosPasswordDialog, setShowTodosPasswordDialog] = useState(false); // Estado para el diálogo de contraseña de "TODOS LOS EMPLEADOS"
 
   const jefesArea = Array.isArray(jefesAreaData) ? jefesAreaData : [];
   const historiales = Array.isArray(historialesData) ? historialesData : [];
@@ -176,6 +178,21 @@ export default function KPIPage() {
       setPassword('');
     } else {
       alert('Clave incorrecta');
+    }
+  };
+
+  const handleTodosAccess = () => {
+    setShowTodosPasswordDialog(true); // Muestra el diálogo para ingresar la clave
+  };
+
+  const handleTodosPasswordSubmit = () => {
+    if (todosPassword === 'admintodos') {
+      setViewAllEmployees(true); // Accede a la vista de todos los empleados
+      setShowTable(true);
+      setShowTodosPasswordDialog(false);
+      setTodosPassword('');
+    } else {
+      toast.error('Clave de acceso incorrecta');
     }
   };
 
@@ -542,7 +559,7 @@ export default function KPIPage() {
             <div className="flex justify-center">Cargando jefes de área...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="cursor-pointer hover:bg-gray-50 group" onClick={handleAdminAccess}>
+              <Card className="cursor-pointer hover:bg-gray-50 group" onClick={handleTodosAccess}>
                 <CardHeader>
                   <CardTitle className="text-lg group-hover:text-gray-500">
                     TODOS LOS EMPLEADOS
@@ -651,6 +668,34 @@ export default function KPIPage() {
                   Cancelar
                 </Button>
                 <Button onClick={handleHistorialPasswordSubmit}>
+                  Acceder
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showTodosPasswordDialog} onOpenChange={setShowTodosPasswordDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Acceso a Todos los Empleados</DialogTitle>
+                <DialogDescription>
+                  Ingrese la clave de acceso para ver todos los empleados
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Input
+                  type="password"
+                  value={todosPassword}
+                  onChange={(e) => setTodosPassword(e.target.value)}
+                  placeholder="Clave de acceso"
+                  className="mb-4"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowTodosPasswordDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleTodosPasswordSubmit}>
                   Acceder
                 </Button>
               </div>
