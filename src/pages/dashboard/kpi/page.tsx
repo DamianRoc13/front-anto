@@ -1,13 +1,14 @@
 "use client";
 import { useState, useMemo, useEffect } from 'react';
 import { useKPI } from '@/hooks/use-kpi';
-import { useJefeArea } from '@/hooks/use-jefe-area'; // Nuevo hook
+import { useJefeArea } from '@/hooks/use-jefe-area';
+import { useHistorial } from '@/hooks/use-historial'; // Nuevo hook
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, Settings, Trash } from 'lucide-react';
+import { ChevronLeft, Settings, Trash, List } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ColumnDef,
@@ -24,13 +25,22 @@ export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [showJefeAreaSection, setShowJefeAreaSection] = useState(false);
+  const [showHistorialSection, setShowHistorialSection] = useState(false);
+  const [showCreateHistorialDialog, setShowCreateHistorialDialog] = useState(false);
+  const [newHistorial, setNewHistorial] = useState({ nombre: '', fechaDe: '', fechaHasta: '', guardadoPor: '', tablaKpi: [] });
+  const [selectedHistorial, setSelectedHistorial] = useState<any>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newJefeArea, setNewJefeArea] = useState({ id: '', nombre: '', contraseña: '', departamento: '' });
   const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null);
   const { getJefesArea, createJefeArea, deleteJefeArea } = useJefeArea();
   const { data: jefesAreaData, refetch } = getJefesArea();
+  const { getHistoriales, createHistorial, deleteHistorial } = useHistorial();
+  const { data: historialesData, refetch: refetchHistoriales } = getHistoriales();
+  const [historialPassword, setHistorialPassword] = useState('');
+  const [showHistorialPasswordDialog, setShowHistorialPasswordDialog] = useState(false);
 
-  const jefesArea = Array.isArray(jefesAreaData) ? jefesAreaData : []; // Asegura que siempre sea un array
+  const jefesArea = Array.isArray(jefesAreaData) ? jefesAreaData : [];
+  const historiales = Array.isArray(historialesData) ? historialesData : [];
 
   const queryClient = useQueryClient();
   const [selectedCargo, setSelectedCargo] = useState<string | null>(null);
@@ -237,6 +247,130 @@ export default function KPIPage() {
     }
   };
 
+  const handleHistorialAccess = () => {
+    setShowHistorialPasswordDialog(true); // Muestra el diálogo para ingresar la clave
+  };
+
+  const handleHistorialPasswordSubmit = () => {
+    if (historialPassword === 'adminhistorial') {
+      setShowHistorialSection(true); // Accede a la sección de historial
+      setShowHistorialPasswordDialog(false);
+      setHistorialPassword('');
+    } else {
+      toast.error('Clave de historial incorrecta');
+    }
+  };
+
+  const handleCreateHistorial = async () => {
+    try {
+      // Envía tablaKpi como un array vacío
+      const historialConTablaVacia = { ...newHistorial, tablaKpi: [] };
+
+      await createHistorial.mutateAsync(historialConTablaVacia);
+      toast.success('Historial creado correctamente');
+      setNewHistorial({ nombre: '', fechaDe: '', fechaHasta: '', guardadoPor: '', tablaKpi: [] }); // Limpia el formulario
+      setShowCreateHistorialDialog(false);
+      refetchHistoriales();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al crear historial');
+    }
+  };
+
+  const handleDeleteHistorial = async (id: string) => {
+    try {
+      await deleteHistorial.mutateAsync(id);
+      toast.success('Historial eliminado correctamente');
+      setSelectedHistorial(null); // Cierra el diálogo automáticamente
+      refetchHistoriales();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Error al eliminar historial');
+    }
+  };
+
+  if (showHistorialSection) {
+    return (
+      <div className="container mx-auto py-8">
+        <Button variant="ghost" className="mb-4" onClick={() => setShowHistorialSection(false)}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Volver
+        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Carga e Historial</h1>
+          <Button onClick={() => setShowCreateHistorialDialog(true)}>Crear Historial</Button>
+        </div>
+        <div className="space-y-4">
+          {historiales.map((historial: any) => (
+            <div key={historial.id} className="border rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-bold">{historial.nombre}</h2>
+                  <p className="text-sm text-gray-500">
+                    Desde: {historial.fechaDe} - Hasta: {historial.fechaHasta}
+                  </p>
+                  <p className="text-sm text-gray-500">Guardado por: {historial.guardadoPor}</p>
+                </div>
+                <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
+                  <Trash className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Dialog open={showCreateHistorialDialog} onOpenChange={setShowCreateHistorialDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Historial</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Nombre del historial"
+                value={newHistorial.nombre}
+                onChange={(e) => setNewHistorial({ ...newHistorial, nombre: e.target.value })}
+              />
+              <Input
+                type="date"
+                placeholder="Fecha de inicio"
+                value={newHistorial.fechaDe}
+                onChange={(e) => setNewHistorial({ ...newHistorial, fechaDe: e.target.value })}
+              />
+              <Input
+                type="date"
+                placeholder="Fecha de fin"
+                value={newHistorial.fechaHasta}
+                onChange={(e) => setNewHistorial({ ...newHistorial, fechaHasta: e.target.value })}
+              />
+              <Input
+                placeholder="Guardado por"
+                value={newHistorial.guardadoPor}
+                onChange={(e) => setNewHistorial({ ...newHistorial, guardadoPor: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateHistorialDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateHistorial}>Crear</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!selectedHistorial} onOpenChange={() => setSelectedHistorial(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>¿Está seguro de eliminar el historial "{selectedHistorial?.nombre}"?</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setSelectedHistorial(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => handleDeleteHistorial(selectedHistorial.id)}>Eliminar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   if (showJefeAreaSection) {
     return (
       <div className="container mx-auto py-8">
@@ -329,13 +463,20 @@ export default function KPIPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-4">
         <Button
           variant="ghost"
           className="flex items-center gap-2"
           onClick={handleAdminAccess}
         >
           <Settings className="h-4 w-4" /> Administrador de Jefes de Área
+        </Button>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={handleHistorialAccess}
+        >
+          <List className="h-4 w-4" /> Carga e Historial
         </Button>
       </div>
       {!showTable ? (
@@ -426,6 +567,34 @@ export default function KPIPage() {
                   Cancelar
                 </Button>
                 <Button onClick={handleAdminSubmit}>
+                  Acceder
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showHistorialPasswordDialog} onOpenChange={setShowHistorialPasswordDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Acceso a Historial</DialogTitle>
+                <DialogDescription>
+                  Ingrese la clave de acceso para ver la sección de historial
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Input
+                  type="password"
+                  value={historialPassword}
+                  onChange={(e) => setHistorialPassword(e.target.value)}
+                  placeholder="Clave de historial"
+                  className="mb-4"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowHistorialPasswordDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleHistorialPasswordSubmit}>
                   Acceder
                 </Button>
               </div>
