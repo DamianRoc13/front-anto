@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, Settings, Trash, List } from 'lucide-react';
+import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp } from 'lucide-react'; // Importa los íconos de flechas
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ColumnDef,
@@ -315,7 +315,11 @@ export default function KPIPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" onClick={() => toggleHistorialExpand(historial.id)}>
-                    {expandedHistorialId === historial.id ? 'Colapsar' : 'Expandir'}
+                    {expandedHistorialId === historial.id ? (
+                      <ChevronUp className="h-4 w-4" /> // Flecha hacia arriba para colapsar
+                    ) : (
+                      <ChevronDown className="h-4 w-4" /> // Flecha hacia abajo para expandir
+                    )}
                   </Button>
                   <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
                     <Trash className="h-4 w-4 text-red-500" />
