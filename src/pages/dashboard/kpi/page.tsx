@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp } from 'lucide-react'; // Importa los íconos de flechas
+import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp, User } from 'lucide-react'; // Importa los íconos de flechas y usuario
 import { useQueryClient } from '@tanstack/react-query';
+import { CustomModal } from '@/components/ui/custom-modal'; // Importa el CustomModal
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -33,6 +34,7 @@ export default function KPIPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newJefeArea, setNewJefeArea] = useState({ id: '', nombre: '', contraseña: '', departamento: '' });
   const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null);
+  const [showModal, setShowModal] = useState(false); // Estado para controlar el CustomModal
   const { getJefesArea, createJefeArea, deleteJefeArea } = useJefeArea();
   const { data: jefesAreaData, refetch } = getJefesArea();
   const { getHistoriales, createHistorial, deleteHistorial } = useHistorial();
@@ -347,6 +349,16 @@ export default function KPIPage() {
     setExpandedHistorialId(expandedHistorialId === id ? null : id); // Alterna entre expandir y colapsar
   };
 
+  const handleOpenModal = (jefe: any) => {
+    setSelectedJefeArea(jefe);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedJefeArea(null);
+    setShowModal(false);
+  };
+
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -510,9 +522,14 @@ export default function KPIPage() {
                 <TableCell>{jefe.contraseña}</TableCell>
                 <TableCell>{jefe.departamento || 'N/A'}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" onClick={() => setSelectedJefeArea(jefe)}>
-                    <Trash className="h-4 w-4 text-red-500" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" onClick={() => handleOpenModal(jefe)}>
+                      <User className="h-4 w-4 text-blue-500" />
+                    </Button>
+                    <Button variant="ghost" onClick={() => setSelectedJefeArea(jefe)}>
+                      <Trash className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -568,6 +585,20 @@ export default function KPIPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <CustomModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          title={`Detalles de ${selectedJefeArea?.nombre}`}
+          description="Información detallada del jefe de área"
+        >
+          <div className="space-y-4">
+            <p><strong>ID:</strong> {selectedJefeArea?.id}</p>
+            <p><strong>Nombre:</strong> {selectedJefeArea?.nombre}</p>
+            <p><strong>Contraseña:</strong> {selectedJefeArea?.contraseña}</p>
+            <p><strong>Departamento:</strong> {selectedJefeArea?.departamento || 'N/A'}</p>
+          </div>
+        </CustomModal>
       </div>
     );
   }
