@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api'; 
 
+interface JefeArea {
+  id: string | null;
+  nombre: string | null;
+  contraseña: string | null;
+  departamento: string | null;
+}
+
 interface KpiData {
   id: number;
   cedula: string;
@@ -15,7 +22,8 @@ interface KpiData {
   estado: 'pendiente' | 'aprobado' | 'rechazado';
   fechaCalificacion: string;
   usuarioCalificador: string;
-  jefeArea: string; // Nuevo campo agregado
+  jefeArea: JefeArea | null; 
+  jefeAreaId: string | null; 
 }
 
 export interface KpiCommit {
@@ -51,7 +59,13 @@ export function useKPI() {
         return Array.isArray(data)
           ? data.map((kpi: KpiData) => ({
               ...kpi,
-              jefeArea: kpi.jefeArea || 'Sin jefe asignado', // Maneja el nuevo campo jefeArea
+              jefeArea: kpi.jefeArea || {
+                id: null,
+                nombre: 'Sin Jefe de Área',
+                contraseña: null,
+                departamento: null,
+              }, // Si jefeArea es null, asigna valores predeterminados
+              jefeAreaId: kpi.jefeAreaId || 'sin-jefe', // Si jefeAreaId es null, usa 'sin-jefe'
             }))
           : [];
       } catch (error) {
@@ -131,8 +145,8 @@ export function useKPI() {
   });
 
   const assignJefeArea = useMutation({
-    mutationFn: async ({ kpiId, jefeAreaId }: { kpiId: string; jefeAreaId: string }) => {
-      const { data } = await api.post(`/kpi/${kpiId}/asignar-jefe`, { jefeAreaId }, {
+    mutationFn: async ({ jefeAreaId, kpiIds }: { jefeAreaId: string; kpiIds: string[] }) => {
+      const { data } = await api.patch(`/jefe-area/${jefeAreaId}/asignar-kpis`, kpiIds, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -140,13 +154,13 @@ export function useKPI() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['jefes-area'] });
     },
   });
 
   const unassignJefeArea = useMutation({
-    mutationFn: async (kpiId: string) => {
-      const { data } = await api.delete(`/kpi/${kpiId}/designar-jefe`, {
+    mutationFn: async ({ jefeAreaId, kpiIds }: { jefeAreaId: string; kpiIds: string[] }) => {
+      const { data } = await api.patch(`/jefe-area/${jefeAreaId}/remover-kpis`, kpiIds, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -154,7 +168,7 @@ export function useKPI() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['jefes-area'] });
     },
   });
 
