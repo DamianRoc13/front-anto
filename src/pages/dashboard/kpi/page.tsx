@@ -82,6 +82,23 @@ export default function KPIPage() {
     return Array.from(cargos).sort();
   }, [allKPIs]);
 
+  const jefesUnicos = useMemo(() => {
+    if (!allKPIs || allKPIs.length === 0) return [];
+
+    const jefes = new Map<string, { nombre: string; contraseña: string | null }>();
+    allKPIs.forEach((item) => {
+      const jefeId = item.jefeAreaId || 'sin-jefe';
+      const jefeNombre = item.jefeArea?.nombre || 'Sin Jefe de Área';
+      const jefeContraseña = item.jefeArea?.contraseña || null;
+
+      if (!jefes.has(jefeId)) {
+        jefes.set(jefeId, { nombre: jefeNombre, contraseña: jefeContraseña });
+      }
+    });
+
+    return Array.from(jefes.entries()); // Devuelve un array de [jefeId, { nombre, contraseña }]
+  }, [allKPIs]);
+
   const empleadosFiltrados = useMemo(() => {
     let filtered = viewAllEmployees ? allKPIs : (selectedCargo ? allKPIs.filter(item => item.cargoActividad === selectedCargo) : []);
     return filtered;
@@ -198,6 +215,22 @@ export default function KPIPage() {
       setTodosPassword('');
     } else {
       toast.error('Clave de acceso incorrecta');
+    }
+  };
+
+  const handleJefeAreaAccess = (jefeId: string, contraseña: string | null) => {
+    if (!contraseña) {
+      toast.error('Este jefe no tiene una contraseña asignada.');
+      return;
+    }
+
+    const inputPassword = prompt(`Ingrese la contraseña para acceder a ${jefeId === 'sin-jefe' ? 'Sin Jefe de Área' : 'el jefe'}`);
+    if (inputPassword === contraseña) {
+      setSelectedCargo(jefeId);
+      setViewAllEmployees(false);
+      setShowTable(true);
+    } else {
+      toast.error('Contraseña incorrecta.');
     }
   };
 
@@ -577,12 +610,16 @@ export default function KPIPage() {
                </CardContent>
               </Card>
 
-              {cargosUnicos.map((cargo, index) => {
-                const count = allKPIs.filter(item => item.cargoActividad === cargo).length;
+              {jefesUnicos.map(([jefeId, { nombre, contraseña }], index) => {
+                const count = allKPIs.filter((item) => (item.jefeAreaId || 'sin-jefe') === jefeId).length;
                 return (
-                  <Card key={index} className="cursor-pointer hover:bg-gray-50 group" onClick={() => handleCargoClick(cargo)}>
+                  <Card
+                    key={index}
+                    className="cursor-pointer hover:bg-gray-50 group"
+                    onClick={() => handleJefeAreaAccess(jefeId, contraseña)}
+                  >
                     <CardHeader>
-                      <CardTitle className="text-lg group-hover:text-gray-500">{cargo}</CardTitle>
+                      <CardTitle className="text-lg group-hover:text-gray-500">{nombre}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-gray-500 group-hover:text-gray-700">
