@@ -130,6 +130,34 @@ export function useKPI() {
     }
   });
 
+  const assignJefeArea = useMutation({
+    mutationFn: async ({ jefeAreaId, kpiIds }: { jefeAreaId: string; kpiIds: string[] }) => {
+      const { data } = await api.patch(`/jefe-area/${jefeAreaId}/asignar-kpis`, kpiIds, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jefes-area'] });
+    },
+  });
+
+  const unassignJefeArea = useMutation({
+    mutationFn: async ({ jefeAreaId, kpiIds }: { jefeAreaId: string; kpiIds: string[] }) => {
+      const { data } = await api.patch(`/jefe-area/${jefeAreaId}/remover-kpis`, kpiIds, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jefes-area'] });
+    },
+  });
+
   const getPendingCommits = useQuery<KpiCommit[]>({
     queryKey: ['kpi-pending-commits'],
     queryFn: async () => {
@@ -145,5 +173,14 @@ export function useKPI() {
     staleTime: 1000 * 60 * 5 
   });
 
-  return { getKPIs, createCommitKPI, approveKpiCommit, secondApproveCommit, updateCommit, getPendingCommits };
+  return { 
+    getKPIs, 
+    createCommitKPI, 
+    approveKpiCommit, 
+    secondApproveCommit, 
+    updateCommit, 
+    getPendingCommits, 
+    assignJefeArea, 
+    unassignJefeArea 
+  };
 }
