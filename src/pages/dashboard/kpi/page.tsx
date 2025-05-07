@@ -312,15 +312,17 @@ export default function KPIPage() {
           </Button>
 
           <div className="flex items-center justify-between mb-6">
-  <h1 className="text-2xl font-bold">
-    KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
-  </h1>
-  <PendingKpiApprovals 
-    onActionCompleted={() => {
-      queryClient.invalidateQueries({ queryKey: ['kpis'] });
-    }} 
-  />
-</div>
+            <h1 className="text-2xl font-bold">
+              KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
+            </h1>
+            {viewAllEmployees && (
+              <PendingKpiApprovals 
+                onActionCompleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ['kpis'] });
+                }} 
+              />
+            )}
+          </div>
           
           <div className="border rounded-lg overflow-hidden">
             <div className="p-4 \ border-b flex flex-col sm:flex-row gap-4">
