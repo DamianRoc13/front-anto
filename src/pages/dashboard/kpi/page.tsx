@@ -29,6 +29,7 @@ export default function KPIPage() {
   const [showCreateHistorialDialog, setShowCreateHistorialDialog] = useState(false);
   const [newHistorial, setNewHistorial] = useState({ nombre: '', fechaDe: '', fechaHasta: '', guardadoPor: '', tablaKpi: [] });
   const [selectedHistorial, setSelectedHistorial] = useState<any>(null);
+  const [expandedHistorialId, setExpandedHistorialId] = useState<string | null>(null); // Estado para controlar el historial expandido
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newJefeArea, setNewJefeArea] = useState({ id: '', nombre: '', contraseña: '', departamento: '' });
   const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null);
@@ -287,6 +288,10 @@ export default function KPIPage() {
     }
   };
 
+  const toggleHistorialExpand = (id: string) => {
+    setExpandedHistorialId(expandedHistorialId === id ? null : id); // Alterna entre expandir y colapsar
+  };
+
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -308,10 +313,57 @@ export default function KPIPage() {
                   </p>
                   <p className="text-sm text-gray-500">Guardado por: {historial.guardadoPor}</p>
                 </div>
-                <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
-                  <Trash className="h-4 w-4 text-red-500" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={() => toggleHistorialExpand(historial.id)}>
+                    {expandedHistorialId === historial.id ? 'Colapsar' : 'Expandir'}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
               </div>
+              {expandedHistorialId === historial.id && (
+                <div className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Cédula</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Cargo</TableHead>
+                        <TableHead>Calificación KPI</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Observaciones</TableHead>
+                        <TableHead>Usuario Calificador</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historial.tablaKpi.map((kpi: any) => (
+                        <TableRow key={kpi.id}>
+                          <TableCell>{kpi.cedula}</TableCell>
+                          <TableCell>{kpi.nombre}</TableCell>
+                          <TableCell>{kpi.cargoActividad}</TableCell>
+                          <TableCell>{kpi.calificacionKPI}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                kpi.estado === 'aprobado'
+                                  ? 'bg-green-100 text-green-800'
+                                  : kpi.estado === 'pendiente'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {kpi.estado}
+                            </span>
+                          </TableCell>
+                          <TableCell>{kpi.observaciones || 'N/A'}</TableCell>
+                          <TableCell>{kpi.usuarioCalificador || 'N/A'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           ))}
         </div>
