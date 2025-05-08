@@ -27,6 +27,7 @@ function ModalContent({
   jefeAreaForModal,
   empleadosAsignados,
   empleadosDisponibles,
+  setEmpleadosDisponibles,
   handleRemoverEmpleado,
   handleAsignarEmpleados,
   setShowModal,
@@ -34,115 +35,174 @@ function ModalContent({
   jefeAreaForModal: any;
   empleadosAsignados: any[];
   empleadosDisponibles: any[];
+  setEmpleadosDisponibles: (empleados: any[]) => void;
   handleRemoverEmpleado: (empleadoId: string) => void;
   handleAsignarEmpleados: () => void;
   setShowModal: (value: boolean) => void;
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filteredEmpleadosDisponibles = empleadosDisponibles.filter(emp =>
-    emp.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.cedula?.toString().includes(searchTerm)
-  );
+  const [searchTermAsignados, setSearchTermAsignados] = useState('');
+  const [currentPageAsignados, setCurrentPageAsignados] = useState(1);
+  const [searchTermDisponibles, setSearchTermDisponibles] = useState('');
+  const [currentPageDisponibles, setCurrentPageDisponibles] = useState(1);
 
   const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredEmpleadosDisponibles.length / itemsPerPage);
-  const paginatedEmpleados = filteredEmpleadosDisponibles.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+
+  // Filtrar y paginar empleados asignados
+  const filteredEmpleadosAsignados = empleadosAsignados.filter(emp =>
+    emp.nombre.toLowerCase().includes(searchTermAsignados.toLowerCase()) ||
+    emp.cedula?.toString().includes(searchTermAsignados)
+  );
+  const totalPagesAsignados = Math.ceil(filteredEmpleadosAsignados.length / itemsPerPage);
+  const paginatedEmpleadosAsignados = filteredEmpleadosAsignados.slice(
+    (currentPageAsignados - 1) * itemsPerPage,
+    currentPageAsignados * itemsPerPage
+  );
+
+  // Filtrar y paginar empleados disponibles
+  const filteredEmpleadosDisponibles = empleadosDisponibles.filter(emp =>
+    emp.nombre.toLowerCase().includes(searchTermDisponibles.toLowerCase()) ||
+    emp.cedula?.toString().includes(searchTermDisponibles)
+  );
+  const totalPagesDisponibles = Math.ceil(filteredEmpleadosDisponibles.length / itemsPerPage);
+  const paginatedEmpleadosDisponibles = filteredEmpleadosDisponibles.slice(
+    (currentPageDisponibles - 1) * itemsPerPage,
+    currentPageDisponibles * itemsPerPage
   );
 
   return (
-    <div className="bg-gray text-white p-6 rounded-lg shadow-lg">
+    <div className="bg-gray-000 text-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold mb-4">Gestión de Empleados - {jefeAreaForModal?.nombre}</h2>
 
+      {/* Empleados Asignados */}
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-2">Empleados Asignados</h3>
-        <ul className="space-y-2">
-          {empleadosAsignados.map(emp => (
-            <li key={emp.id} className="flex justify-between items-center p-2 border border-gray-000 rounded-md">
-              <span>{emp.nombre} - {emp.cargoActividad}</span>
-              <button
-                onClick={() => handleRemoverEmpleado(emp.id)}
-                className="text-red-500 hover:underline"
-              >
-                Eliminar
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-lg font-medium mb-2">Empleados Disponibles</h3>
-        <input
+        <Input
           type="text"
           placeholder="Buscar por nombre o cédula"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-000 rounded-md bg-gray-000 text-white placeholder-gray-400"
+          value={searchTermAsignados}
+          onChange={(e) => setSearchTermAsignados(e.target.value)}
+          className="mb-4"
         />
-        <table className="w-full border-collapse border border-gray-000">
-          <thead>
-            <tr className="bg-gray-700">
-              <th className="p-2 border border-gray-700 text-gray-300">Nombre</th>
-              <th className="p-2 border border-gray-700 text-gray-300">Cédula</th>
-              <th className="p-2 border border-gray-700 text-gray-300">Cargo</th>
-              <th className="p-2 border border-gray-700 text-gray-300">Seleccionar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedEmpleados.map(emp => (
-              <tr key={emp.id} className="hover:bg-gray-700">
-                <td className="p-2 border border-gray-700">{emp.nombre}</td>
-                <td className="p-2 border border-gray-700">{emp.cedula}</td>
-                <td className="p-2 border border-gray-700">{emp.cargoActividad}</td>
-                <td className="p-2 border border-gray-700 text-center">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Cédula</TableHead>
+              <TableHead>Cargo</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedEmpleadosAsignados.map(emp => (
+              <TableRow key={emp.id}>
+                <TableCell>{emp.nombre}</TableCell>
+                <TableCell>{emp.cedula}</TableCell>
+                <TableCell>{emp.cargoActividad}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleRemoverEmpleado(emp.id)}
+                  >
+                    Eliminar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex justify-between items-center mt-4">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPageAsignados(prev => Math.max(prev - 1, 1))}
+            disabled={currentPageAsignados === 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-gray-400">Página {currentPageAsignados} de {totalPagesAsignados}</span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPageAsignados(prev => Math.min(prev + 1, totalPagesAsignados))}
+            disabled={currentPageAsignados === totalPagesAsignados}
+          >
+            Siguiente
+          </Button>
+        </div>
+      </div>
+
+      {/* Empleados Disponibles */}
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-2">Empleados Disponibles</h3>
+        <Input
+          type="text"
+          placeholder="Buscar por nombre o cédula"
+          value={searchTermDisponibles}
+          onChange={(e) => setSearchTermDisponibles(e.target.value)}
+          className="mb-4"
+        />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Cédula</TableHead>
+              <TableHead>Cargo</TableHead>
+              <TableHead>Seleccionar</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedEmpleadosDisponibles.map(emp => (
+              <TableRow key={emp.id}>
+                <TableCell>{emp.nombre}</TableCell>
+                <TableCell>{emp.cedula}</TableCell>
+                <TableCell>{emp.cargoActividad}</TableCell>
+                <TableCell className="text-center">
                   <input
                     type="checkbox"
                     checked={!!emp.selected}
                     onChange={() => {
-                      emp.selected = !emp.selected;
+                      const updatedEmpleados = empleadosDisponibles.map(e =>
+                        e.id === emp.id ? { ...e, selected: !e.selected } : e
+                      );
+                      setEmpleadosDisponibles(updatedEmpleados);
                     }}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
-            disabled={currentPage === 1}
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPageDisponibles(prev => Math.max(prev - 1, 1))}
+            disabled={currentPageDisponibles === 1}
           >
             Anterior
-          </button>
-          <span className="text-gray-400">Página {currentPage} de {totalPages}</span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
-            disabled={currentPage === totalPages}
+          </Button>
+          <span className="text-gray-400">Página {currentPageDisponibles} de {totalPagesDisponibles}</span>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPageDisponibles(prev => Math.min(prev + 1, totalPagesDisponibles))}
+            disabled={currentPageDisponibles === totalPagesDisponibles}
           >
             Siguiente
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="flex justify-end gap-4">
-        <button
+        <Button
+          variant="outline"
           onClick={() => setShowModal(false)}
-          className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
         >
           Cancelar
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="default"
           onClick={handleAsignarEmpleados}
-          className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600"
         >
           Asignar Empleados
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -738,6 +798,7 @@ export default function KPIPage() {
             jefeAreaForModal={jefeAreaForModal}
             empleadosAsignados={empleadosAsignados}
             empleadosDisponibles={empleadosDisponibles}
+            setEmpleadosDisponibles={setEmpleadosDisponibles} // Pasa el setter como prop
             handleRemoverEmpleado={(empleadoId: string) => {
               if (jefeAreaForModal?.id) {
                 removerEmpleado(jefeAreaForModal.id, empleadoId);
