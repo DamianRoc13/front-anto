@@ -54,14 +54,14 @@ function ModalContent({
   );
 
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg">
+    <div className="bg-gray text-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold mb-4">Gestión de Empleados - {jefeAreaForModal?.nombre}</h2>
 
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-2">Empleados Asignados</h3>
         <ul className="space-y-2">
           {empleadosAsignados.map(emp => (
-            <li key={emp.id} className="flex justify-between items-center p-2 border border-gray-700 rounded-md">
+            <li key={emp.id} className="flex justify-between items-center p-2 border border-gray-000 rounded-md">
               <span>{emp.nombre} - {emp.cargoActividad}</span>
               <button
                 onClick={() => handleRemoverEmpleado(emp.id)}
@@ -81,15 +81,15 @@ function ModalContent({
           placeholder="Buscar por nombre o cédula"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 mb-4 border border-gray-700 rounded-md bg-gray-800 text-white"
+          className="w-full p-2 mb-4 border border-gray-000 rounded-md bg-gray-000 text-white placeholder-gray-400"
         />
-        <table className="w-full border-collapse border border-gray-700">
+        <table className="w-full border-collapse border border-gray-000">
           <thead>
-            <tr className="bg-gray-800">
-              <th className="p-2 border border-gray-700">Nombre</th>
-              <th className="p-2 border border-gray-700">Cédula</th>
-              <th className="p-2 border border-gray-700">Cargo</th>
-              <th className="p-2 border border-gray-700">Seleccionar</th>
+            <tr className="bg-gray-700">
+              <th className="p-2 border border-gray-700 text-gray-300">Nombre</th>
+              <th className="p-2 border border-gray-700 text-gray-300">Cédula</th>
+              <th className="p-2 border border-gray-700 text-gray-300">Cargo</th>
+              <th className="p-2 border border-gray-700 text-gray-300">Seleccionar</th>
             </tr>
           </thead>
           <tbody>
@@ -119,7 +119,7 @@ function ModalContent({
           >
             Anterior
           </button>
-          <span>Página {currentPage} de {totalPages}</span>
+          <span className="text-gray-400">Página {currentPage} de {totalPages}</span>
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
@@ -139,7 +139,7 @@ function ModalContent({
         </button>
         <button
           onClick={handleAsignarEmpleados}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
+          className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600"
         >
           Asignar Empleados
         </button>
