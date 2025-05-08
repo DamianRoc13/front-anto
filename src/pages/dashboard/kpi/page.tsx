@@ -33,7 +33,10 @@ export default function KPIPage() {
   const [expandedHistorialId, setExpandedHistorialId] = useState<string | null>(null); // Estado para controlar el historial expandido
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newJefeArea, setNewJefeArea] = useState({ id: '', nombre: '', contraseña: '', departamento: '' });
-  const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null);
+  const [selectedJefeArea, setSelectedJefeArea] = useState<any>(null); // Para el modal de eliminación
+  const [jefeAreaForModal, setJefeAreaForModal] = useState<any>(null); // Para el modal de gestión de empleados
+  const [empleadosAsignados, setEmpleadosAsignados] = useState<any[]>([]);
+  const [empleadosDisponibles, setEmpleadosDisponibles] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false); // Estado para controlar el CustomModal
   const { getJefesArea, createJefeArea, deleteJefeArea } = useJefeArea();
   const { data: jefesAreaData, refetch } = getJefesArea();
@@ -351,15 +354,124 @@ export default function KPIPage() {
     setExpandedHistorialId(expandedHistorialId === id ? null : id); // Alterna entre expandir y colapsar
   };
 
-  const handleOpenModal = (jefe: any) => {
-    setSelectedJefeArea(jefe);
-    setShowModal(true);
+  const handleOpenModal = async (jefe: any) => {
+    setJefeAreaForModal(jefe); // Actualiza el estado específico para el modal de gestión
+
+    try {
+      // Filtra los empleados asignados al jefe actual
+      const asignados = allKPIs.filter(kpi => kpi.jefeAreaId === jefe.id);
+
+      // Filtra los empleados disponibles (sin jefe asignado o asignados a otro jefe)
+      const disponibles = allKPIs.filter(kpi => !kpi.jefeAreaId || kpi.jefeAreaId !== jefe.id);
+
+      // Actualiza los estados con los datos filtrados
+      setEmpleadosAsignados(asignados);
+      setEmpleadosDisponibles(disponibles);
+
+      // Abre el modal
+      setShowModal(true);
+    } catch (error) {
+      toast.error('Error al cargar los empleados');
+    }
   };
 
-  const handleCloseModal = () => {
-    setSelectedJefeArea(null);
-    setShowModal(false);
+  const handleRemoverEmpleado = async (empleadoId: string) => {
+    try {
+      await fetch(`http://localhost:3000/jefe-area/${jefeAreaForModal.id}/remover-kpis`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer YOUR_TOKEN_HERE',
+        },
+        body: JSON.stringify([empleadoId]),
+      });
+
+      setEmpleadosAsignados(prev => prev.filter(emp => emp.id !== empleadoId));
+      setEmpleadosDisponibles(prev => [...prev, empleadosAsignados.find(emp => emp.id === empleadoId)]);
+      toast.success('Empleado removido correctamente');
+    } catch (error) {
+      toast.error('Error al remover empleado');
+    }
   };
+
+  const handleAsignarEmpleados = async () => {
+    const empleadosSeleccionados = empleadosDisponibles.filter(emp => emp.selected);
+    const ids = empleadosSeleccionados.map(emp => emp.id);
+
+    try {
+      await fetch(`http://localhost:3000/jefe-area/${jefeAreaForModal.id}/asignar-kpis`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer YOUR_TOKEN_HERE',
+        },
+        body: JSON.stringify(ids),
+      });
+
+      setEmpleadosAsignados(prev => [...prev, ...empleadosSeleccionados]);
+      setEmpleadosDisponibles(prev => prev.filter(emp => !ids.includes(emp.id)));
+      toast.success('Empleados asignados correctamente');
+    } catch (error) {
+      toast.error('Error al asignar empleados');
+    }
+  };
+
+  const renderModalContent = () => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Gestión de Empleados - {jefeAreaForModal?.nombre}</h2>
+
+      <div>
+        <h3 className="text-lg font-medium">Empleados Asignados</h3>
+        <ul className="space-y-2">
+          {empleadosAsignados.map(emp => (
+            <li key={emp.id} className="flex justify-between items-center p-2 border rounded-md">
+              <span>{emp.nombre} - {emp.cargoActividad}</span>
+              <button
+                onClick={() => handleRemoverEmpleado(emp.id)}
+                className="text-red-500 hover:underline"
+              >
+                Eliminar
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium">Empleados Disponibles</h3>
+        <ul className="space-y-2">
+          {empleadosDisponibles.map(emp => (
+            <li key={emp.id} className="flex justify-between items-center p-2 border rounded-md">
+              <span>{emp.nombre} - {emp.cargoActividad}</span>
+              <input
+                type="checkbox"
+                checked={!!emp.selected}
+                onChange={() => {
+                  emp.selected = !emp.selected;
+                  setEmpleadosDisponibles([...empleadosDisponibles]);
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="btn btn-outline"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleAsignarEmpleados}
+          className="btn btn-primary"
+        >
+          Asignar Empleados
+        </button>
+      </div>
+    </div>
+  );
 
   if (showHistorialSection) {
     return (
@@ -590,16 +702,11 @@ export default function KPIPage() {
 
         <CustomModal
           isOpen={showModal}
-          onClose={handleCloseModal}
-          title={`Detalles de ${selectedJefeArea?.nombre}`}
+          onClose={() => setShowModal(false)}
+          title={`Detalles de ${jefeAreaForModal?.nombre}`}
           description="Información detallada del jefe de área"
         >
-          <div className="space-y-4">
-            <p><strong>ID:</strong> {selectedJefeArea?.id}</p>
-            <p><strong>Nombre:</strong> {selectedJefeArea?.nombre}</p>
-            <p><strong>Contraseña:</strong> {selectedJefeArea?.contraseña}</p>
-            <p><strong>Departamento:</strong> {selectedJefeArea?.departamento || 'N/A'}</p>
-          </div>
+          {renderModalContent()}
         </CustomModal>
       </div>
     );
@@ -666,10 +773,10 @@ export default function KPIPage() {
           )}
 
           <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-            <DialogContent>
+            <DialogContent aria-describedby="dialog-description">
               <DialogHeader>
                 <DialogTitle>Ingrese la clave de acceso para {selectedCargo}</DialogTitle>
-                <DialogDescription>
+                <DialogDescription id="dialog-description">
                   Solo personal autorizado puede acceder a esta información
                 </DialogDescription>
               </DialogHeader>
