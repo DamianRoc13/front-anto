@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useKPI } from '@/hooks/use-kpi';
 import { useJefeArea } from '@/hooks/use-jefe-area';
 import { useHistorial } from '@/hooks/use-historial'; // Nuevo hook
+import { useAuth } from '@/hooks/use-auth'; // Importa el hook de autenticación
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export default function KPIPage() {
   const [empleadosAsignados, setEmpleadosAsignados] = useState<any[]>([]);
   const [empleadosDisponibles, setEmpleadosDisponibles] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false); // Estado para controlar el CustomModal
-  const { getJefesArea, createJefeArea, deleteJefeArea } = useJefeArea();
+  const { getJefesArea, createJefeArea, deleteJefeArea, removerEmpleado, asignarEmpleados } = useJefeArea();
   const { data: jefesAreaData, refetch } = getJefesArea();
   const { getHistoriales, createHistorial, deleteHistorial } = useHistorial();
   const { data: historialesData, refetch: refetchHistoriales } = getHistoriales();
@@ -377,20 +378,11 @@ export default function KPIPage() {
 
   const handleRemoverEmpleado = async (empleadoId: string) => {
     try {
-      await fetch(`http://localhost:3000/jefe-area/${jefeAreaForModal.id}/remover-kpis`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer YOUR_TOKEN_HERE',
-        },
-        body: JSON.stringify([empleadoId]),
-      });
-
+      await removerEmpleado(jefeAreaForModal.id, empleadoId);
       setEmpleadosAsignados(prev => prev.filter(emp => emp.id !== empleadoId));
       setEmpleadosDisponibles(prev => [...prev, empleadosAsignados.find(emp => emp.id === empleadoId)]);
-      toast.success('Empleado removido correctamente');
     } catch (error) {
-      toast.error('Error al remover empleado');
+      // Error ya manejado en `useJefeArea`
     }
   };
 
@@ -399,20 +391,11 @@ export default function KPIPage() {
     const ids = empleadosSeleccionados.map(emp => emp.id);
 
     try {
-      await fetch(`http://localhost:3000/jefe-area/${jefeAreaForModal.id}/asignar-kpis`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer YOUR_TOKEN_HERE',
-        },
-        body: JSON.stringify(ids),
-      });
-
+      await asignarEmpleados(jefeAreaForModal.id, ids);
       setEmpleadosAsignados(prev => [...prev, ...empleadosSeleccionados]);
       setEmpleadosDisponibles(prev => prev.filter(emp => !ids.includes(emp.id)));
-      toast.success('Empleados asignados correctamente');
     } catch (error) {
-      toast.error('Error al asignar empleados');
+      // Error ya manejado en `useJefeArea`
     }
   };
 
