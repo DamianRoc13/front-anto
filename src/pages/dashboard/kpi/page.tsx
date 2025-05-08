@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useKPI } from '@/hooks/use-kpi';
 import { useJefeArea } from '@/hooks/use-jefe-area';
 import { useHistorial } from '@/hooks/use-historial'; 
-import { useAuth } from '@/hooks/use-auth'; 6
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,8 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { PendingKpiApprovals } from './components/pending-kpi-approvals';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 function ModalContent({
   jefeAreaForModal,
@@ -561,6 +562,47 @@ export default function KPIPage() {
     }
   };
 
+  const handleDownloadExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("KPIs");
+
+    // Agregar encabezados con estilo
+    worksheet.columns = [
+      { header: "Cédula", key: "cedula", width: 15 },
+      { header: "Nombre", key: "nombre", width: 20 },
+      { header: "Cargo", key: "cargoActividad", width: 20 },
+      { header: "Jefe de Área", key: "jefeArea", width: 20 },
+      { header: "Calificador", key: "usuarioCalificador", width: 20 },
+      { header: "Estado", key: "estado", width: 15 },
+    ];
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }; // Texto blanco y negrita
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4CAF50' }, // Fondo verde
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }; // Centrado
+    });
+
+    // Agregar datos de la tabla
+    empleadosFiltrados.forEach((item) => {
+      worksheet.addRow({
+        cedula: item.cedula,
+        nombre: item.nombre,
+        cargoActividad: item.cargoActividad,
+        jefeArea: item.jefeArea?.nombre || "Sin jefe asignado",
+        usuarioCalificador: item.usuarioCalificador || "N/A",
+        estado: item.estado,
+      });
+    });
+
+    // Generar archivo y descargar
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "Reporte_KPIs.xlsx");
+  };
+
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -1008,13 +1050,22 @@ export default function KPIPage() {
             <h1 className="text-2xl font-bold">
               KPI - {viewAllEmployees ? 'TODOS LOS EMPLEADOS' : selectedCargo}
             </h1>
-            {viewAllEmployees && (
-              <PendingKpiApprovals 
-                onActionCompleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['kpis'] });
-                }} 
-              />
-            )}
+            <div className="flex items-center gap-4">
+              {viewAllEmployees && (
+                <PendingKpiApprovals 
+                  onActionCompleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['kpis'] });
+                  }} 
+                />
+              )}
+              <Button
+                variant="default"
+                className="flex items-center gap-2"
+                onClick={handleDownloadExcel}
+              >
+                <ChevronDown className="h-4 w-4" /> Descargar Excel
+              </Button>
+            </div>
           </div>
           
           <div className="border rounded-lg overflow-hidden">
