@@ -2,16 +2,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useKPI } from '@/hooks/use-kpi';
 import { useJefeArea } from '@/hooks/use-jefe-area';
-import { useHistorial } from '@/hooks/use-historial'; // Nuevo hook
-import { useAuth } from '@/hooks/use-auth'; // Importa el hook de autenticación
+import { useHistorial } from '@/hooks/use-historial'; 
+import { useAuth } from '@/hooks/use-auth'; 6
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp, User } from 'lucide-react'; // Importa los íconos de flechas y usuario
+import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp, User } from 'lucide-react'; 
 import { useQueryClient } from '@tanstack/react-query';
-import { CustomModal } from '@/components/ui/custom-modal'; // Importa el CustomModal
+import { CustomModal } from '@/components/ui/custom-modal'; 
 import {
   ColumnDef,
   ColumnFiltersState,
