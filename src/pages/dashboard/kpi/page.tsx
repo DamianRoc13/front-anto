@@ -102,8 +102,15 @@ export default function KPIPage() {
   }, [allKPIs]);
 
   const empleadosFiltrados = useMemo(() => {
-    let filtered = viewAllEmployees ? allKPIs : (selectedCargo ? allKPIs.filter(item => item.cargoActividad === selectedCargo) : []);
-    return filtered;
+    if (viewAllEmployees) {
+      return allKPIs;
+    }
+
+    if (selectedCargo) {
+      return allKPIs.filter(item => item.jefeArea?.nombre === selectedCargo);
+    }
+
+    return [];
   }, [selectedCargo, allKPIs, viewAllEmployees]);
 
   const columns: ColumnDef<any>[] = [
