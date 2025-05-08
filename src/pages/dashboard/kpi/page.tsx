@@ -23,6 +23,131 @@ import {
 import { toast } from "sonner";
 import { PendingKpiApprovals } from './components/pending-kpi-approvals';
 
+function ModalContent({
+  jefeAreaForModal,
+  empleadosAsignados,
+  empleadosDisponibles,
+  handleRemoverEmpleado,
+  handleAsignarEmpleados,
+  setShowModal,
+}: {
+  jefeAreaForModal: any;
+  empleadosAsignados: any[];
+  empleadosDisponibles: any[];
+  handleRemoverEmpleado: (empleadoId: string) => void;
+  handleAsignarEmpleados: () => void;
+  setShowModal: (value: boolean) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredEmpleadosDisponibles = empleadosDisponibles.filter(emp =>
+    emp.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    emp.cedula?.toString().includes(searchTerm)
+  );
+
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredEmpleadosDisponibles.length / itemsPerPage);
+  const paginatedEmpleados = filteredEmpleadosDisponibles.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  return (
+    <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg">
+      <h2 className="text-2xl font-semibold mb-4">Gestión de Empleados - {jefeAreaForModal?.nombre}</h2>
+
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-2">Empleados Asignados</h3>
+        <ul className="space-y-2">
+          {empleadosAsignados.map(emp => (
+            <li key={emp.id} className="flex justify-between items-center p-2 border border-gray-700 rounded-md">
+              <span>{emp.nombre} - {emp.cargoActividad}</span>
+              <button
+                onClick={() => handleRemoverEmpleado(emp.id)}
+                className="text-red-500 hover:underline"
+              >
+                Eliminar
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mb-6">
+        <h3 className="text-lg font-medium mb-2">Empleados Disponibles</h3>
+        <input
+          type="text"
+          placeholder="Buscar por nombre o cédula"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 mb-4 border border-gray-700 rounded-md bg-gray-800 text-white"
+        />
+        <table className="w-full border-collapse border border-gray-700">
+          <thead>
+            <tr className="bg-gray-800">
+              <th className="p-2 border border-gray-700">Nombre</th>
+              <th className="p-2 border border-gray-700">Cédula</th>
+              <th className="p-2 border border-gray-700">Cargo</th>
+              <th className="p-2 border border-gray-700">Seleccionar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedEmpleados.map(emp => (
+              <tr key={emp.id} className="hover:bg-gray-700">
+                <td className="p-2 border border-gray-700">{emp.nombre}</td>
+                <td className="p-2 border border-gray-700">{emp.cedula}</td>
+                <td className="p-2 border border-gray-700">{emp.cargoActividad}</td>
+                <td className="p-2 border border-gray-700 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!emp.selected}
+                    onChange={() => {
+                      emp.selected = !emp.selected;
+                    }}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </button>
+          <span>Página {currentPage} de {totalPages}</span>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <button
+          onClick={() => setShowModal(false)}
+          className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleAsignarEmpleados}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
+        >
+          Asignar Empleados
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function KPIPage() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -376,86 +501,6 @@ export default function KPIPage() {
     }
   };
 
-  const handleRemoverEmpleado = async (empleadoId: string) => {
-    try {
-      await removerEmpleado(jefeAreaForModal.id, empleadoId);
-      setEmpleadosAsignados(prev => prev.filter(emp => emp.id !== empleadoId));
-      setEmpleadosDisponibles(prev => [...prev, empleadosAsignados.find(emp => emp.id === empleadoId)]);
-    } catch (error) {
-      // Error ya manejado en `useJefeArea`
-    }
-  };
-
-  const handleAsignarEmpleados = async () => {
-    const empleadosSeleccionados = empleadosDisponibles.filter(emp => emp.selected);
-    const ids = empleadosSeleccionados.map(emp => emp.id);
-
-    try {
-      await asignarEmpleados(jefeAreaForModal.id, ids);
-      setEmpleadosAsignados(prev => [...prev, ...empleadosSeleccionados]);
-      setEmpleadosDisponibles(prev => prev.filter(emp => !ids.includes(emp.id)));
-    } catch (error) {
-      // Error ya manejado en `useJefeArea`
-    }
-  };
-
-  const renderModalContent = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Gestión de Empleados - {jefeAreaForModal?.nombre}</h2>
-
-      <div>
-        <h3 className="text-lg font-medium">Empleados Asignados</h3>
-        <ul className="space-y-2">
-          {empleadosAsignados.map(emp => (
-            <li key={emp.id} className="flex justify-between items-center p-2 border rounded-md">
-              <span>{emp.nombre} - {emp.cargoActividad}</span>
-              <button
-                onClick={() => handleRemoverEmpleado(emp.id)}
-                className="text-red-500 hover:underline"
-              >
-                Eliminar
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <h3 className="text-lg font-medium">Empleados Disponibles</h3>
-        <ul className="space-y-2">
-          {empleadosDisponibles.map(emp => (
-            <li key={emp.id} className="flex justify-between items-center p-2 border rounded-md">
-              <span>{emp.nombre} - {emp.cargoActividad}</span>
-              <input
-                type="checkbox"
-                checked={!!emp.selected}
-                onChange={() => {
-                  emp.selected = !emp.selected;
-                  setEmpleadosDisponibles([...empleadosDisponibles]);
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={() => setShowModal(false)}
-          className="btn btn-outline"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleAsignarEmpleados}
-          className="btn btn-primary"
-        >
-          Asignar Empleados
-        </button>
-      </div>
-    </div>
-  );
-
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -689,7 +734,29 @@ export default function KPIPage() {
           title={`Detalles de ${jefeAreaForModal?.nombre}`}
           description="Información detallada del jefe de área"
         >
-          {renderModalContent()}
+          <ModalContent
+            jefeAreaForModal={jefeAreaForModal}
+            empleadosAsignados={empleadosAsignados}
+            empleadosDisponibles={empleadosDisponibles}
+            handleRemoverEmpleado={(empleadoId: string) => {
+              if (jefeAreaForModal?.id) {
+                removerEmpleado(jefeAreaForModal.id, empleadoId);
+              } else {
+                console.error("No se encontró el jefeAreaId para remover el empleado.");
+              }
+            }}
+            handleAsignarEmpleados={() => {
+              if (jefeAreaForModal?.id) {
+                const selectedEmpleadoIds = empleadosDisponibles
+                  .filter(emp => emp.selected)
+                  .map(emp => emp.id);
+                asignarEmpleados(jefeAreaForModal.id, selectedEmpleadoIds);
+              } else {
+                console.error("No se encontró el jefeAreaId para asignar empleados.");
+              }
+            }}
+            setShowModal={setShowModal}
+          />
         </CustomModal>
       </div>
     );
