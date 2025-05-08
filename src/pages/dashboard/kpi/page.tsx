@@ -196,12 +196,12 @@ export default function KPIPage() {
   };
 
   const handlePasswordSubmit = () => {
-    if (password === 'TRCORALV1010') {
+    if ((selectedCargo === 'Sin Jefe de Área' && password === 'sinadmin') || password === jefesUnicos.find(([_, jefe]) => jefe.nombre === selectedCargo)?.[1].contraseña) {
       setShowTable(true);
       setShowPasswordDialog(false);
       setPassword('');
     } else {
-      alert('Clave incorrecta');
+      toast.error('Clave incorrecta');
     }
   };
 
@@ -220,20 +220,15 @@ export default function KPIPage() {
     }
   };
 
-  const handleJefeAreaAccess = (jefeId: string, contraseña: string | null) => {
+  const handleJefeAreaAccess = (jefeNombre: string, contraseña: string | null) => {
     if (!contraseña) {
       toast.error('Este jefe no tiene una contraseña asignada.');
       return;
     }
 
-    const inputPassword = prompt(`Ingrese la contraseña para acceder a ${jefeId === 'sin-jefe' ? 'Sin Jefe de Área' : 'el jefe'}`);
-    if (inputPassword === contraseña) {
-      setSelectedCargo(jefeId);
-      setViewAllEmployees(false);
-      setShowTable(true);
-    } else {
-      toast.error('Contraseña incorrecta.');
-    }
+    setSelectedCargo(jefeNombre);
+    setPassword(''); // Limpia la contraseña antes de abrir el modal
+    setShowPasswordDialog(true);
   };
 
   const handleCalificarClick = (employee: any) => {
@@ -647,7 +642,7 @@ export default function KPIPage() {
                   <Card
                     key={index}
                     className="cursor-pointer hover:bg-gray-50 group"
-                    onClick={() => handleJefeAreaAccess(jefeId, contraseña)}
+                    onClick={() => handleJefeAreaAccess(nombre, contraseña)}
                   >
                     <CardHeader>
                       <CardTitle className="text-lg group-hover:text-gray-500">{nombre}</CardTitle>
@@ -675,7 +670,7 @@ export default function KPIPage() {
                 <Input 
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Ingrese la clave"
                   className="mb-4"
                 />
