@@ -319,7 +319,40 @@ export default function KPIPage() {
     {
       accessorKey: "jefeArea", 
       header: "Jefe de Área",
-      cell: ({ row }) => row.original.jefeArea?.nombre || 'Sin jefe asignado', // Muestra el nombre del jefe o un valor por defecto
+      cell: ({ row }) => row.original.jefeArea?.nombre || 'Sin jefe asignado',
+    },
+    {
+      accessorKey: "sueldo",
+      header: "Sueldo",
+      cell: ({ row }) => {
+        const sueldo = parseFloat(row.original.sueldo); 
+        return isNaN(sueldo) ? "$0.00" : `$${sueldo.toFixed(2)}`; 
+      },
+    },
+    {
+      accessorKey: "kpi",
+      header: "KPI",
+    },
+    {
+      accessorKey: "grupoCentrosCosto",
+      header: "Grupo Centros Costo",
+    },
+    {
+      accessorKey: "calificacionKPI",
+      header: "Calificación KPI",
+    },
+    {
+      accessorKey: "totalKPI",
+      header: "Total KPI",
+    },
+    {
+      accessorKey: "observaciones",
+      header: "Observaciones",
+    },
+    {
+      accessorKey: "fechaCalificacion",
+      header: "Fecha Calificación",
+      cell: ({ row }) => new Date(row.original.fechaCalificacion).toLocaleDateString() || 'N/A',
     },
     {
       accessorKey: "usuarioCalificador",
@@ -572,18 +605,25 @@ export default function KPIPage() {
       { header: "Nombre", key: "nombre", width: 20 },
       { header: "Cargo", key: "cargoActividad", width: 20 },
       { header: "Jefe de Área", key: "jefeArea", width: 20 },
+      { header: "Sueldo", key: "sueldo", width: 15 },
+      { header: "KPI", key: "kpi", width: 10 },
+      { header: "Grupo Centros Costo", key: "grupoCentrosCosto", width: 25 },
+      { header: "Calificación KPI", key: "calificacionKPI", width: 20 },
+      { header: "Total KPI", key: "totalKPI", width: 15 },
+      { header: "Observaciones", key: "observaciones", width: 30 },
+      { header: "Fecha Calificación", key: "fechaCalificacion", width: 20 },
       { header: "Calificador", key: "usuarioCalificador", width: 20 },
       { header: "Estado", key: "estado", width: 15 },
     ];
 
     worksheet.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }; // Texto blanco y negrita
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FF4CAF50' }, // Fondo verde
+        fgColor: { argb: 'FF4CAF50' },
       };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' }; // Centrado
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
     // Agregar datos de la tabla
@@ -593,6 +633,15 @@ export default function KPIPage() {
         nombre: item.nombre,
         cargoActividad: item.cargoActividad,
         jefeArea: item.jefeArea?.nombre || "Sin jefe asignado",
+        sueldo: item.sueldo ? Number(item.sueldo).toFixed(2) : "0.00",
+        kpi: item.kpi,
+        grupoCentrosCostos: item.grupoCentrosCostos,
+        calificacionKPI: item.calificacionKPI,
+        totalKPI: item.totalKPI,
+        observaciones: item.observaciones || "N/A",
+        fechaCalificacion: item.fechaCalificacion
+          ? new Date(item.fechaCalificacion).toLocaleDateString()
+          : "N/A",
         usuarioCalificador: item.usuarioCalificador || "N/A",
         estado: item.estado,
       });
