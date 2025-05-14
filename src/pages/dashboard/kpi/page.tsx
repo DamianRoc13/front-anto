@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { PendingKpiApprovals } from './components/pending-kpi-approvals';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useDebounce } from "@/hooks/use-debounce";
 
 function ModalContent({
   jefeAreaForModal,
@@ -250,6 +251,8 @@ export default function KPIPage() {
   const [viewAllEmployees, setViewAllEmployees] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [searchEmployee, setSearchEmployee] = useState<string>("");
+  const [suggestions, setSuggestions] = useState<string[]>([]); // Estado para las sugerencias
+  const debouncedSearch = useDebounce(searchEmployee, 300); // Usar debounce para evitar búsquedas constantes
 
   const { getKPIs, createCommitKPI, approveKpiCommit } = useKPI();
   const { 
@@ -304,6 +307,24 @@ export default function KPIPage() {
 
     return [];
   }, [selectedCargo, allKPIs, viewAllEmployees]);
+
+  useEffect(() => {
+    if (debouncedSearch) {
+      const filteredSuggestions = historiales
+        .flatMap((historial: any) => historial.tablaKpi.map((kpi: any) => kpi.nombre))
+        .filter((name: string) =>
+          name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        );
+      setSuggestions([...new Set(filteredSuggestions)]); // Eliminar duplicados
+    } else {
+      setSuggestions([]);
+    }
+  }, [debouncedSearch, historiales]);
+
+  const handleSuggestionClick = (name: string) => {
+    setSearchEmployee(name);
+    setSuggestions([]); // Limpiar las sugerencias al seleccionar
+  };
 
   const filteredChartData = useMemo(() => {
     if (!searchEmployee) return [];
@@ -677,12 +698,27 @@ export default function KPIPage() {
           <ChevronLeft className="mr-2 h-4 w-4" /> Volver
         </Button>
         <div className="mb-6">
-          <Input
-            placeholder="Buscar empleado por nombre"
-            value={searchEmployee}
-            onChange={(e) => setSearchEmployee(e.target.value)}
-            className="mb-4"
-          />
+          <div className="relative">
+            <Input
+              placeholder="Buscar empleado por nombre"
+              value={searchEmployee}
+              onChange={(e) => setSearchEmployee(e.target.value)}
+              className="mb-4"
+            />
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 bg-black border border-gray-700 rounded-md shadow-md w-full max-h-40 overflow-y-auto text-white">
+                {suggestions.map((suggestion, index) => (
+                  <li
+                    key={index}
+                    className="px-4 py-2 cursor-pointer hover:bg-gray-700"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {searchEmployee && filteredChartData.length > 0 && (
             <AnalistChart
               employeeName={searchEmployee}
