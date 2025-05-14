@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ChevronLeft, Settings, Trash, List, ChevronDown, ChevronUp, User } from 'lucide-react'; 
 import { useQueryClient } from '@tanstack/react-query';
 import { CustomModal } from '@/components/ui/custom-modal'; 
+import { AnalistChart } from './components/AnalistChart'; 
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -248,6 +249,7 @@ export default function KPIPage() {
   const [observaciones, setObservaciones] = useState('');
   const [viewAllEmployees, setViewAllEmployees] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [searchEmployee, setSearchEmployee] = useState<string>("");
 
   const { getKPIs, createCommitKPI, approveKpiCommit } = useKPI();
   const { 
@@ -302,6 +304,28 @@ export default function KPIPage() {
 
     return [];
   }, [selectedCargo, allKPIs, viewAllEmployees]);
+
+  const filteredChartData = useMemo(() => {
+    if (!searchEmployee) return [];
+
+    const filteredData: any[] = [];
+
+    historiales.forEach((historial: any) => {
+      const employeeData = historial.tablaKpi.find(
+        (kpi: any) => kpi.nombre.toLowerCase() === searchEmployee.toLowerCase()
+      );
+
+      if (employeeData) {
+        filteredData.push({
+          month: historial.nombre, // Nombre del historial como eje X
+          calificacionKPI: employeeData.calificacionKPI,
+          totalKPI: employeeData.totalKPI,
+        });
+      }
+    });
+
+    return filteredData;
+  }, [searchEmployee, historiales]);
 
   const columns: ColumnDef<any>[] = [
     {
@@ -404,12 +428,6 @@ export default function KPIPage() {
       </div>
     );
   }
-
-  const handleCargoClick = (cargo: string) => {
-    setSelectedCargo(cargo);
-    setViewAllEmployees(false);
-    setShowPasswordDialog(true);
-  };
 
   const handleAdminAccess = () => {
     setShowAdminDialog(true);
@@ -658,6 +676,23 @@ export default function KPIPage() {
         <Button variant="ghost" className="mb-4" onClick={() => setShowHistorialSection(false)}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Volver
         </Button>
+        <div className="mb-6">
+          <Input
+            placeholder="Buscar empleado por nombre"
+            value={searchEmployee}
+            onChange={(e) => setSearchEmployee(e.target.value)}
+            className="mb-4"
+          />
+          {searchEmployee && filteredChartData.length > 0 && (
+            <AnalistChart
+              employeeName={searchEmployee}
+              chartData={filteredChartData}
+            />
+          )}
+          {searchEmployee && filteredChartData.length === 0 && (
+            <p className="text-sm text-gray-500">No se encontraron datos para el empleado.</p>
+          )}
+        </div>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Carga e Historial</h1>
           <Button onClick={() => setShowCreateHistorialDialog(true)}>Crear Historial</Button>
