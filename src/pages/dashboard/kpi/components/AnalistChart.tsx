@@ -31,10 +31,15 @@ export function AnalistChart({
       color: "hsl(var(--chart-1))",
     },
     totalKPI: {
-      label: "Total KPI",
+      label: "Pago KPI",
       color: "hsl(var(--chart-5))",
     },
   };
+
+  const processedChartData = chartData.map((data) => ({
+    ...data,
+    calificacionKPI: Math.round(data.calificacionKPI),
+  }));
 
   return (
     <Card>
@@ -47,7 +52,7 @@ export function AnalistChart({
       <CardContent>
         <ChartContainer config={chartConfig}>
           <AreaChart
-            data={chartData}
+            data={processedChartData}
             margin={{
               left: 12,
               right: 12,
