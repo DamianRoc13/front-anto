@@ -699,6 +699,8 @@ export default function KPIPage() {
         </Button>
         <div className="mb-6">
           <div className="relative">
+            <h1 className="text-2xl font-bold">Análisis de progreso de kpi por empleado</h1>
+            <div className="mb-4"></div>
             <Input
               placeholder="Buscar empleado por nombre"
               value={searchEmployee}

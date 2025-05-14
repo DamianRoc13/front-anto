@@ -57,6 +57,7 @@ export function AnalistChart({
               left: 12,
               right: 12,
             }}
+            height={0} 
           >
             <CartesianGrid vertical={false} />
             <XAxis
