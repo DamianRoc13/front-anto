@@ -691,6 +691,49 @@ export default function KPIPage() {
     saveAs(new Blob([buffer]), "Reporte_KPIs.xlsx");
   };
 
+  const handleDownloadHistorialExcel = async (historial: any) => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(historial.nombre);
+
+    // Agregar encabezados con estilo
+    worksheet.columns = [
+      { header: "Cédula", key: "cedula", width: 15 },
+      { header: "Nombre", key: "nombre", width: 20 },
+      { header: "Cargo", key: "cargoActividad", width: 20 },
+      { header: "Calificación KPI", key: "calificacionKPI", width: 20 },
+      { header: "Estado", key: "estado", width: 15 },
+      { header: "Observaciones", key: "observaciones", width: 30 },
+      { header: "Usuario Calificador", key: "usuarioCalificador", width: 20 },
+    ];
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF4CAF50" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    // Agregar datos del historial
+    historial.tablaKpi.forEach((kpi: any) => {
+      worksheet.addRow({
+        cedula: kpi.cedula,
+        nombre: kpi.nombre,
+        cargoActividad: kpi.cargoActividad,
+        calificacionKPI: kpi.calificacionKPI,
+        estado: kpi.estado,
+        observaciones: kpi.observaciones || "N/A",
+        usuarioCalificador: kpi.usuarioCalificador || "N/A",
+      });
+    });
+
+    // Generar archivo y descargar
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), `${historial.nombre}.xlsx`);
+  };
+
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -757,6 +800,12 @@ export default function KPIPage() {
                   <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
                     <Trash className="h-4 w-4 text-red-500" />
                   </Button>
+                  <Button
+                    variant="default"
+                    onClick={() => handleDownloadHistorialExcel(historial)}
+                  >
+                    Descargar Excel
+                  </Button>
                 </div>
               </div>
               {expandedHistorialId === historial.id && (
@@ -783,18 +832,18 @@ export default function KPIPage() {
                           <TableCell>
                             <span
                               className={`px-2 py-1 rounded-full text-xs ${
-                                kpi.estado === 'aprobado'
-                                  ? 'bg-green-100 text-green-800'
-                                  : kpi.estado === 'pendiente'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
+                                kpi.estado === "aprobado"
+                                  ? "bg-green-100 text-green-800"
+                                  : kpi.estado === "pendiente"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
                               }`}
                             >
                               {kpi.estado}
                             </span>
                           </TableCell>
-                          <TableCell>{kpi.observaciones || 'N/A'}</TableCell>
-                          <TableCell>{kpi.usuarioCalificador || 'N/A'}</TableCell>
+                          <TableCell>{kpi.observaciones || "N/A"}</TableCell>
+                          <TableCell>{kpi.usuarioCalificador || "N/A"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
