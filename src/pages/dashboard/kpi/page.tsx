@@ -235,6 +235,8 @@ export default function KPIPage() {
   const [showHistorialPasswordDialog, setShowHistorialPasswordDialog] = useState(false);
   const [todosPassword, setTodosPassword] = useState('');
   const [showTodosPasswordDialog, setShowTodosPasswordDialog] = useState(false); // Estado para el diálogo de contraseña de "TODOS LOS EMPLEADOS"
+  const [isSelectingHistorials, setIsSelectingHistorials] = useState(false); // Estado para habilitar checkboxes
+  const [selectedHistorials, setSelectedHistorials] = useState<string[]>([]); // IDs de historiales seleccionados
 
   const jefesArea = Array.isArray(jefesAreaData) ? jefesAreaData : [];
   const historiales = Array.isArray(historialesData) ? historialesData : [];
@@ -734,6 +736,65 @@ export default function KPIPage() {
     saveAs(new Blob([buffer]), `${historial.nombre}.xlsx`);
   };
 
+  const handleDownloadSelectedHistorials = async () => {
+    const workbook = new ExcelJS.Workbook();
+
+    for (const historialId of selectedHistorials) {
+      const historial = historiales.find((h: any) => h.id === historialId);
+      if (!historial) continue;
+
+      const worksheet = workbook.addWorksheet(historial.nombre);
+
+      // Agregar encabezados con estilo
+      worksheet.columns = [
+        { header: "Cédula", key: "cedula", width: 15 },
+        { header: "Nombre", key: "nombre", width: 20 },
+        { header: "Cargo", key: "cargoActividad", width: 20 },
+        { header: "Calificación KPI", key: "calificacionKPI", width: 20 },
+        { header: "Estado", key: "estado", width: 15 },
+        { header: "Observaciones", key: "observaciones", width: 30 },
+        { header: "Usuario Calificador", key: "usuarioCalificador", width: 20 },
+      ];
+
+      worksheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4CAF50" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+      });
+
+      // Agregar datos del historial
+      historial.tablaKpi.forEach((kpi: any) => {
+        worksheet.addRow({
+          cedula: kpi.cedula,
+          nombre: kpi.nombre,
+          cargoActividad: kpi.cargoActividad,
+          calificacionKPI: kpi.calificacionKPI,
+          estado: kpi.estado,
+          observaciones: kpi.observaciones || "N/A",
+          usuarioCalificador: kpi.usuarioCalificador || "N/A",
+        });
+      });
+    }
+
+    // Generar archivo y descargar
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "Historiales_Seleccionados.xlsx");
+
+    // Resetear estado
+    setIsSelectingHistorials(false);
+    setSelectedHistorials([]);
+  };
+
+  const handleToggleHistorialSelection = (id: string) => {
+    setSelectedHistorials((prev) =>
+      prev.includes(id) ? prev.filter((historialId) => historialId !== id) : [...prev, id]
+    );
+  };
+
   if (showHistorialSection) {
     return (
       <div className="container mx-auto py-8">
@@ -776,7 +837,16 @@ export default function KPIPage() {
         </div>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Carga e Historial</h1>
-          <Button onClick={() => setShowCreateHistorialDialog(true)}>Crear Historial</Button>
+          <div className="flex gap-2">
+            {isSelectingHistorials ? (
+              <Button onClick={handleDownloadSelectedHistorials}>Descargar Seleccionados</Button>
+            ) : (
+              <>
+                <Button onClick={() => setShowCreateHistorialDialog(true)}>Crear Historial</Button>
+                <Button onClick={() => setIsSelectingHistorials(true)}>Descargar Excels</Button>
+              </>
+            )}
+          </div>
         </div>
         <div className="space-y-4">
           {historiales.map((historial: any) => (
@@ -790,22 +860,27 @@ export default function KPIPage() {
                   <p className="text-sm text-gray-500">Guardado por: {historial.guardadoPor}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={() => toggleHistorialExpand(historial.id)}>
-                    {expandedHistorialId === historial.id ? (
-                      <ChevronUp className="h-4 w-4" /> // Flecha hacia arriba para colapsar
-                    ) : (
-                      <ChevronDown className="h-4 w-4" /> // Flecha hacia abajo para expandir
-                    )}
-                  </Button>
-                  <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
-                    <Trash className="h-4 w-4 text-red-500" />
-                  </Button>
-                  <Button
-                    variant="default"
-                    onClick={() => handleDownloadHistorialExcel(historial)}
-                  >
-                    Descargar Excel
-                  </Button>
+                  {isSelectingHistorials && (
+                    <input
+                      type="checkbox"
+                      checked={selectedHistorials.includes(historial.id)}
+                      onChange={() => handleToggleHistorialSelection(historial.id)}
+                    />
+                  )}
+                  {!isSelectingHistorials && (
+                    <>
+                      <Button variant="ghost" onClick={() => toggleHistorialExpand(historial.id)}>
+                        {expandedHistorialId === historial.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setSelectedHistorial(historial)}>
+                        <Trash className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
               {expandedHistorialId === historial.id && (
